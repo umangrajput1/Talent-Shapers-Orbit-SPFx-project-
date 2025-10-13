@@ -12,6 +12,7 @@ export const useMockData = () => {
   const [expenses, setExpenseData] = useState<any[]>([]);
 
   // expenses
+
   const expensesData = expenses.map((item) => ({
     id: item.Id.toString(),
     description: item.Description,
@@ -20,211 +21,83 @@ export const useMockData = () => {
     date: item.Date.substring(0, 10),
     comments: item.Comments,
   }));
-  // Upload image to Reciept picture library
-  const uploadImageToLibrary = async (file: File): Promise<string> => {
-    try {
-      // Ensure the Reciept picture library exists
-      const pictureLibrary = await web.lists.ensure(
-        "Reciept",
-        "Picture Library"
-      );
-
-      // Upload file to the picture library
-      const uploadResult = await pictureLibrary.list.rootFolder.files.add(
-        file.name,
-        file,
-        true
-      );
-
-      return uploadResult.data.ServerRelativeUrl;
-    } catch (error: any) {
-      console.log("Error uploading image to library:", error);
-      throw error;
-    }
-  };
-
-  // Format image URL for Hyperlink and Picture column
-  const formatImageForHyperlinkPicture = (
-    imageUrl: string,
-    description: string = "Receipt"
-  ): object | string => {
-    if (!imageUrl) return "";
-
-    // For Hyperlink and Picture column, SharePoint expects an object with Description and Url
-    return {
-      Description: description,
-      Url: imageUrl,
-    };
-  };
-
-  // Parse image URL from Hyperlink and Picture column
-  const parseImageFromHyperlinkPicture = (imageData: any): string | null => {
-    if (!imageData) return null;
-
-    // Handle different data types
-    if (typeof imageData === "string") {
-      try {
-        const parsed = JSON.parse(imageData);
-        return (
-          parsed.Url || parsed.url || parsed.serverRelativeUrl || imageData
-        );
-      } catch (error) {
-        // If it's not JSON, return as direct URL
-        return imageData;
-      }
-    } else if (typeof imageData === "object") {
-      // If it's already an object, extract the URL
-      return (
-        imageData.Url || imageData.url || imageData.serverRelativeUrl || null
-      );
-    }
-
-    return null;
-  };
-
-  // Get image URL from Reciept list
-  const getImageUrl = async (imageId: string): Promise<string | null> => {
-    try {
-      const imageItem = await web.lists
-        .getByTitle("Reciept")
-        .items.getById(parseInt(imageId))
-        .get();
-      return imageItem.ServerRelativeUrl || null;
-    } catch (error: any) {
-      console.log("Error getting image URL:", error);
-      return null;
-    }
-  };
-
-  // Store image reference in Reciept list (optional metadata)
-  const storeImageReference = async (
-    serverRelativeUrl: string,
-    expenseId: string
-  ): Promise<string | null> => {
-    try {
-      const imageItem = await web.lists.getByTitle("Reciept").items.add({
-        Title: `Expense_${expenseId}_${Date.now()}`,
-        ServerRelativeUrl: serverRelativeUrl,
-        ExpenseId: expenseId,
-      });
-      return imageItem.data.Id.toString();
-    } catch (error: any) {
-      console.log("Error storing image reference (this is optional):", error);
-      // Don't throw error, just return null as this is optional metadata
-      return null;
-    }
-  };
-
-  // Update Expense Data
-  const updateExpense = async (item: any): Promise<any> => {
-    try {
-      let imageUrl = item.billUrl;
-      let formattedImageData: any = null;
-
-      // If a new file is uploaded, handle it
-      if (item.file && item.file instanceof File) {
-        try {
-          // Upload new image
-          const serverRelativeUrl = await uploadImageToLibrary(item.file);
-          // Store reference in Reciept list (optional)
-          await storeImageReference(serverRelativeUrl, item.Id);
-          imageUrl = serverRelativeUrl;
-          // Format for Hyperlink and Picture column
-          formattedImageData = formatImageForHyperlinkPicture(
-            serverRelativeUrl,
-            item.description
-          );
-        } catch (uploadError) {
-          console.log("Error uploading new image:", uploadError);
-        }
-      } else if (imageUrl) {
-        // If there's an existing image URL, format it
-        formattedImageData = formatImageForHyperlinkPicture(
-          imageUrl,
-          item.description
-        );
-      }
-
-      const updateData: any = {
-        Title: item.description || "New Expense",
-        Description: item.description,
-        Category: item.category,
-        Amount: Number(item.amount),
-        Date: new Date(item.date).toISOString(),
-        Comments: item.comments,
-      };
-
-      // Only add Reciept field if we have image data
-      if (formattedImageData) {
-        updateData.Reciept = formattedImageData;
-      }
-
-      const updatedRes = await web.lists
-        .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
-        .items.getById(item.Id)
-        .update(updateData);
-      await fetchExpenses();
-
-      setExpenseData((prev) =>
-        prev.map((e) => (e.Id === item.Id ? { ...e, ...updatedRes.data } : e))
-      );
-    } catch (error: any) {
-      console.log("update expenses error :: ", error);
-    }
-  };
 
   const fetchExpenses = async () => {
     try {
-      const res = await web.lists.getById("7dc4e19a-3157-4093-9672-6e28e73434b2").items.get();
+      const res = await web.lists
+        .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
+        .items.select(
+          "Id,Title,Description,Category,Amount,Date,Comments,Attachments"
+        )
+        .expand("AttachmentFiles") // ensures attachment files are fetched
+        .get();
 
-      // Map expenses and parse the Hyperlink and Picture format
-      const expensesWithImages = res.map((expense: any) => {
-        const imageUrl = parseImageFromHyperlinkPicture(expense.Reciept);
-        return {
-          ...expense,
-          billUrl: imageUrl,
-        };
-      });
+      const mappedExpenses = await Promise.all(
+        res.map(async (item: any) => {
+          // Fetch attachments if any
+          const attachments = item.Attachments
+            ? await web.lists
+                .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
+                .items.getById(item.Id)
+                .attachmentFiles.get()
+            : [];
 
-      setExpenseData(expensesWithImages);
-    } catch (err: any) {
-      console.log("fetch expenses error :: ", err);
+          return {
+            Id: item.Id,
+            Title: item.Title,
+            Description: item.Description || item.Title,
+            Category: item.Category,
+            Amount: item.Amount,
+            Date: item.Date ? item.Date.substring(0, 10) : "",
+            Comments: item.Comments,
+            Attachments: attachments,
+            AttachmentUrls:
+              attachments.length > 0
+                ? attachments.map(
+                    (att: any) =>
+                      `${window.location.origin}${att.ServerRelativeUrl}`
+                  )
+                : [],
+          };
+        })
+      );
+      setExpenseData(mappedExpenses);
+    } catch (error: any) {
+      console.error("Error fetching expenses:", error);
     }
   };
+  
+  //upload
+  const uploadAttachment = async (
+    listId: string,
+    file: File,
+    itemId: number
+  ) => {
+    const list = web.lists.getById(listId);
 
-  useEffect(() => {
-    fetchExpenses();
-  }, []);
+    // Delete old attachments first (to overwrite)
+    const existingAttachments = await list.items
+      .getById(itemId)
+      .attachmentFiles.get();
+    for (const f of existingAttachments) {
+      await list.items
+        .getById(itemId)
+        .attachmentFiles.getByName(f.FileName)
+        .delete();
+    }
 
-  // Add Expense Data
-  const addExpense = async (item: any): Promise<void> => {
+    // Add new attachment
+    const buffer = await file.arrayBuffer();
+    const uploaded = await list.items
+      .getById(itemId)
+      .attachmentFiles.add(file.name, buffer);
+    return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
+  };
+
+  const addExpense = async (item: any) => {
+    const listId = "7dc4e19a-3157-4093-9672-6e28e73434b2";
     try {
-      let imageUrl = item.billUrl;
-      let formattedImageData: any = null;
-
-      // If a file is uploaded, handle it
-      if (item.file && item.file instanceof File) {
-        try {
-          // Upload image to picture library
-          const serverRelativeUrl = await uploadImageToLibrary(item.file);
-          imageUrl = serverRelativeUrl;
-          // Format for Hyperlink and Picture column
-          formattedImageData = formatImageForHyperlinkPicture(
-            serverRelativeUrl,
-            item.description
-          );
-        } catch (uploadError) {
-          console.log("Error uploading image:", uploadError);
-        }
-      } else if (imageUrl) {
-        // If there's an existing image URL, format it
-        formattedImageData = formatImageForHyperlinkPicture(
-          imageUrl,
-          item.description
-        );
-      }
-
-      const expenseData: any = {
+      const newItem = {
         Title: item.description,
         Description: item.description,
         Category: item.category,
@@ -233,167 +106,214 @@ export const useMockData = () => {
         Comments: item.comments,
       };
 
-      // Only add Reciept field if we have image data
-      if (formattedImageData) {
-        expenseData.Reciept = formattedImageData;
-      }
-
       const res = await web.lists
         .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
-        .items.add(expenseData);
+        .items.add(newItem);
 
-      // Store image reference in Reciept list (optional metadata)
-      if (imageUrl) {
-        try {
-          await storeImageReference(imageUrl, res.data.Id);
-        } catch (updateError) {
-          console.log("Error storing image reference (optional):", updateError);
-        }
+      if (item.file && item.file instanceof File) {
+        await uploadAttachment(listId, item.file, res.data.Id); // Upload attachment
       }
 
-      setExpenseData((prev) => [...prev, { ...res.data, billUrl: imageUrl }]);
+      await fetchExpenses();
     } catch (err: any) {
-      console.log("add expenses error :: ", err);
+      console.error("Error adding expense:", err);
     }
   };
 
-  // Delete Expenses Data
-  const deleteExpense = async (item: any): Promise<any> => {
+  const updateExpense = async (item: any) => {
+    const listId = "7dc4e19a-3157-4093-9672-6e28e73434b2";
+    try {
+      const updateData = {
+        Title: item.description,
+        Description: item.description,
+        Category: item.category,
+        Amount: Number(item.amount),
+        Date: item.date,
+        Comments: item.comments,
+      };
+
+      await web.lists
+        .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
+        .items.getById(item.Id)
+        .update(updateData);
+
+      if (item.file && item.file instanceof File) {
+        await uploadAttachment(listId, item.file, item.Id);
+      }
+
+      await fetchExpenses();
+    } catch (err: any) {
+      console.error("Error updating expense:", err);
+    }
+  };
+
+  const deleteExpense = async (item: any) => {
     try {
       await web.lists
         .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
         .items.getById(item.Id)
         .delete();
+
       setExpenseData((prev) => prev.filter((e) => e.Id !== item.Id));
-    } catch (error: any) {
-      console.log("delete expenses :: ", error);
+    } catch (err: any) {
+      console.error("Error deleting expense:", err);
     }
   };
 
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
   // assignment
 
-// 🔹 Upload attachment to SharePoint list item
-const uploadAttachment = async (itemId: number, file: File, listId: string) => {
-  const list = web.lists.getById(listId);
+  // 🔹 Upload attachment to SharePoint list item
+  // const uploadAttachment = async (itemId: number, file: File, listId: string) => {
+  //   const list = web.lists.getById(listId);
 
-  // Delete old attachments first (to overwrite)
-  const existingAttachments = await list.items.getById(itemId).attachmentFiles.get();
-  for (const f of existingAttachments) {
-    await list.items.getById(itemId).attachmentFiles.getByName(f.FileName).delete();
-  }
+  //   // Delete old attachments first (to overwrite)
+  //   const existingAttachments = await list.items.getById(itemId).attachmentFiles.get();
+  //   for (const f of existingAttachments) {
+  //     await list.items.getById(itemId).attachmentFiles.getByName(f.FileName).delete();
+  //   }
 
-  // Add new attachment
-  const buffer = await file.arrayBuffer();
-  const uploaded = await list.items.getById(itemId).attachmentFiles.add(file.name, buffer);
-  return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
-};
+  //   // Add new attachment
+  //   const buffer = await file.arrayBuffer();
+  //   const uploaded = await list.items.getById(itemId).attachmentFiles.add(file.name, buffer);
+  //   return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
+  // };
 
-// 🔹 CREATE
-const addAssignment = async (assignment: any) => {
-  try {
-    const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
-    // 1️⃣ Create item without file first
-    const addRes = await web.lists.getById(listId).items.add({
-      Title: assignment.title,
-      CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
-      StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
-      TrainerId: assignment.trainerId ? parseInt(assignment.trainerId) : null,
-      DueDate: assignment.dueDate,
-      Status: { results: ["Pending"] }
-    });
+  // 🔹 CREATE
+  const addAssignment = async (assignment: any) => {
+    try {
+      const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
+      // 1️⃣ Create item without file first
+      const addRes = await web.lists.getById(listId).items.add({
+        Title: assignment.title,
+        CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
+        StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
+        TrainerId: assignment.trainerId ? parseInt(assignment.trainerId) : null,
+        DueDate: assignment.dueDate,
+        Status: assignment.status || "Pending",
+      });
 
-    // 2️⃣ Upload file as attachment if present
-    if (assignment.assignmentFile) {
-      await uploadAttachment(addRes.data.Id, assignment.assignmentFile, listId);
+      // 2️⃣ Upload file as attachment if present
+      if (assignment.assignmentFile) {
+        await uploadAttachment(
+          listId,
+          assignment.assignmentFile,
+          addRes.data.Id
+        );
+      }
+
+      await getAssignments();
+    } catch (err) {
+      console.error("Error adding assignment:", err);
     }
-    await getAssignments();
-  } catch (err) {
-    console.error("Error adding assignment:", err);
-  }
-};
+  };
 
-// 🔹 READ
-const getAssignments = async () => {
-  try {
-    const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
-    const items = await web.lists.getById(listId).items.select(
-      "Id,Title,Course/Id,Course/Title,Student/Id,Student/Title,Trainer/Id,Trainer/Title,DueDate,Status,Attachments"
-    ).expand("Course,Student,Trainer").get();
+  // 🔹 READ
+  const getAssignments = async () => {
+    try {
+      const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
+      const items = await web.lists
+        .getById(listId)
+        .items.select(
+          "Id,Title,Course/Id,Course/Title,Student/Id,Student/Title,Trainer/Id,Trainer/Title,DueDate,Status,Attachments"
+        )
+        .expand("Course,Student,Trainer")
+        .get();
 
-    const mappedData = await Promise.all(
-      items.map(async (item: any) => {
-        // Get attachments
-        const attachments = item.Attachments
-          ? await web.lists.getById(listId).items.getById(item.Id).attachmentFiles.get()
-          : [];
+      const mappedData = await Promise.all(
+        items.map(async (item: any) => {
+          // Get attachments
+          const attachments = item.Attachments
+            ? await web.lists
+                .getById(listId)
+                .items.getById(item.Id)
+                .attachmentFiles.get()
+            : [];
 
-        return {
-          id: item.Id.toString(),
-          title: item.Title,
-          courseId: item.Course?.Id?.toString() || "",
-          courseName: item.Course?.Title || "",
-          studentId: item.Student?.Id?.toString() || "",
-          studentName: item.Student?.Title || "",
-          trainerId: item.Trainer?.Id?.toString() || "",
-          trainerName: item.Trainer?.Title || "",
-          dueDate: item.DueDate,
-          status: item.Status || "Pending",
-          attachmentFiles: attachments, // array of attachments
-          assignmentFileUrl: attachments.length > 0 ? `${window.location.origin}${attachments[0].ServerRelativeUrl}` : "",
-        };
-      })
-    );
+          return {
+            id: item.Id.toString(),
+            title: item.Title,
+            courseId: item.Course?.Id?.toString() || "",
+            courseName: item.Course?.Title || "",
+            studentId: item.Student?.Id?.toString() || "",
+            studentName: item.Student?.Title || "",
+            trainerId: item.Trainer?.Id?.toString() || "",
+            trainerName: item.Trainer?.Title || "",
+            dueDate: item.DueDate,
+            status: item.Status || "Pending",
+            attachmentFiles: attachments, // array of attachments
+            assignmentFileUrl:
+              attachments.length > 0
+                ? `${window.location.origin}${attachments[0].ServerRelativeUrl}`
+                : "",
+          };
+        })
+      );
 
-    setAssignments(mappedData);
-  } catch (err) {
-    console.error("Error fetching assignments:", err);
-    throw err;
-  }
-};
-
-// 🔹 UPDATE
-const updateAssignment = async (assignment: any) => {
-  try {
-    const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
-
-    // Update item fields first
-    await web.lists.getById(listId).items.getById(parseInt(assignment.id)).update({
-      Title: assignment.title,
-      CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
-      StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
-      TrainerId: assignment.trainerId ? parseInt(assignment.trainerId) : null,
-      DueDate: assignment.dueDate,
-      Status: assignment.status || "Pending",
-    });
-
-    // Upload new attachment if provided (overwrites old)
-    if (assignment.assignmentFile) {
-      await uploadAttachment(parseInt(assignment.id), assignment.assignmentFile, listId);
+      setAssignments(mappedData);
+    } catch (err) {
+      console.error("Error fetching assignments:", err);
+      throw err;
     }
+  };
 
-    await getAssignments();
-  } catch (err) {
-    console.error("Error updating assignment:", err);
-    throw err;
-  }
-};
+  // 🔹 UPDATE
+  const updateAssignment = async (assignment: any) => {
+    try {
+      const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
 
-// 🔹 DELETE
-const deleteAssignment = async (id: string) => {
-  try {
-    const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
-    await web.lists.getById(listId).items.getById(parseInt(id)).delete();
-    await getAssignments();
-  } catch (err) {
-    console.error("Error deleting assignment:", err);
-    throw err;
-  }
-};
+      // Update item fields first
+      await web.lists
+        .getById(listId)
+        .items.getById(parseInt(assignment.id))
+        .update({
+          Title: assignment.title,
+          CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
+          StudentId: assignment.studentId
+            ? parseInt(assignment.studentId)
+            : null,
+          TrainerId: assignment.trainerId
+            ? parseInt(assignment.trainerId)
+            : null,
+          DueDate: assignment.dueDate,
+          Status: assignment.status || "Pending",
+        });
 
-// 🔹 Call getAssignments on mount
-useEffect(() => {
-  getAssignments();
-}, []);
+      // Upload new attachment if provided (overwrites old)
+      if (assignment.assignmentFile) {
+        await uploadAttachment(
+          listId,
+          assignment.assignmentFile,
+          parseInt(assignment.id)
+        );
+      }
+
+      await getAssignments();
+    } catch (err) {
+      console.error("Error updating assignment:", err);
+      throw err;
+    }
+  };
+
+  // 🔹 DELETE
+  const deleteAssignment = async (id: string) => {
+    try {
+      const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
+      await web.lists.getById(listId).items.getById(parseInt(id)).delete();
+      await getAssignments();
+    } catch (err) {
+      console.error("Error deleting assignment:", err);
+      throw err;
+    }
+  };
+
+  // 🔹 Call getAssignments on mount
+  useEffect(() => {
+    getAssignments();
+  }, []);
 
   // payment module
 
@@ -430,14 +350,16 @@ useEffect(() => {
   // Add Fee Payment
   const addFeePayment = async (data: any) => {
     try {
-      await web.lists.getById("29c80eac-d776-4043-819a-dab43a982585").items.add({
-        Title: "Fee Payment",
-        StudentId: parseInt(data.studentId),
-        Amount: data.amount,
-        Date: data.date,
-        Status: data.status,
-        PaymentMethod: data.paymentMethod,
-      });
+      await web.lists
+        .getById("29c80eac-d776-4043-819a-dab43a982585")
+        .items.add({
+          Title: "Fee Payment",
+          StudentId: parseInt(data.studentId),
+          Amount: data.amount,
+          Date: data.date,
+          Status: data.status,
+          PaymentMethod: data.paymentMethod,
+        });
       await fetchFeePayments();
     } catch (err) {
       console.error("Error adding fee payment:", err);
@@ -477,165 +399,168 @@ useEffect(() => {
     }
   };
 
-
   // trainer model
-useEffect(() => {
-  const getTrainers = async (): Promise<void> => {
-    try {
-      const list = await web.lists
+  useEffect(() => {
+    const getTrainers = async (): Promise<void> => {
+      try {
+        const list = await web.lists
+          .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+          .items.select(
+            "Id,Title,FullName,Email,Phone,Gender,Address,Expertise/Id,Expertise/Title,Attachments"
+          )
+          .expand("Expertise")
+          .get();
+
+        const formatted = await Promise.all(
+          list.map(async (item: any) => {
+            // Get attachments if any
+            const attachments = item.Attachments
+              ? await web.lists
+                  .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+                  .items.getById(item.Id)
+                  .attachmentFiles.get()
+              : [];
+
+            // Take first attachment as profile picture (if multiple)
+            const imageUrl =
+              attachments.length > 0
+                ? `${window.location.origin}${attachments[0].ServerRelativeUrl}`
+                : "";
+
+            return {
+              id: item.Id.toString(),
+              name: item.FullName,
+              email: item.Email,
+              phone: item.Phone,
+              address: item.Address,
+              gender: item.Gender,
+              imageUrl,
+              expertise: item.Expertise.map((ex: any) => ex.Id.toString()),
+              attachments, // store all attachments
+            };
+          })
+        );
+
+        setTrainers(formatted);
+      } catch (err) {
+        console.error("Error fetching trainers:", err);
+      }
+    };
+
+    getTrainers();
+  }, []);
+
+  const uploadTrainerAttachment = async (itemId: number, file: File) => {
+    // Delete old attachment if exists
+    const attachments = await web.lists
+      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+      .items.getById(itemId)
+      .attachmentFiles.get();
+
+    for (const f of attachments) {
+      await web.lists
         .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-        .items.select(
-          "Id,Title,FullName,Email,Phone,Gender,Address,Expertise/Id,Expertise/Title,Attachments"
-        )
-        .expand("Expertise")
-        .get();
+        .items.getById(itemId)
+        .attachmentFiles.getByName(f.FileName)
+        .delete();
+    }
 
-      const formatted = await Promise.all(
-        list.map(async (item: any) => {
-          // Get attachments if any
-          const attachments = item.Attachments
-            ? await web.lists
-                .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-                .items.getById(item.Id)
-                .attachmentFiles.get()
-            : [];
+    // Add new attachment
+    const buffer = await file.arrayBuffer();
+    const uploaded = await web.lists
+      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+      .items.getById(itemId)
+      .attachmentFiles.add(file.name, buffer);
 
-          // Take first attachment as profile picture (if multiple)
-          const imageUrl =
-            attachments.length > 0
-              ? `${window.location.origin}${attachments[0].ServerRelativeUrl}`
-              : "";
+    return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
+  };
 
-          return {
-            id: item.Id.toString(),
-            name: item.FullName,
-            email: item.Email,
-            phone: item.Phone,
-            address: item.Address,
-            gender: item.Gender,
-            imageUrl,
-            expertise: item.Expertise.map((ex: any) => ex.Id.toString()),
-            attachments, // store all attachments
-          };
-        })
-      );
+  // 🔹 Add a new trainer
+  const addTrainer = async (trainer: any) => {
+    try {
+      const item = await web.lists
+        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+        .items.add({
+          Title: trainer.name,
+          FullName: trainer.name,
+          Email: trainer.email,
+          Phone: trainer.phone,
+          Address: trainer.address,
+          Gender: trainer.gender,
+          ExpertiseId: {
+            results: trainer.expertise.map((id: any) => parseInt(id)),
+          },
+        });
 
-      setTrainers(formatted);
+      let imageUrl = "";
+      if (trainer.imageFile) {
+        imageUrl = await uploadTrainerAttachment(
+          item.data.Id,
+          trainer.imageFile
+        );
+      }
+
+      const newTrainer = {
+        ...trainer,
+        id: item.data.Id.toString(),
+        imageUrl,
+      };
+      setTrainers([...trainers, newTrainer]);
     } catch (err) {
-      console.error("Error fetching trainers:", err);
+      console.error("Error adding trainer:", err);
+    }
+  };
+  // 🔹 Update trainer
+  const updateTrainer = async (trainer: any): Promise<void> => {
+    try {
+      await web.lists
+        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+        .items.getById(parseInt(trainer.id))
+        .update({
+          FullName: trainer.name,
+          Email: trainer.email,
+          Phone: trainer.phone,
+          Address: trainer.address,
+          Gender: trainer.gender,
+          ExpertiseId: {
+            results: trainer.expertise.map((id: any) => parseInt(id)),
+          },
+        });
+
+      let imageUrl = trainer.imageUrl || "";
+      if (trainer.imageFile) {
+        imageUrl = await uploadTrainerAttachment(
+          parseInt(trainer.id),
+          trainer.imageFile
+        );
+      }
+
+      const updatedTrainer = {
+        ...trainer,
+        imageUrl,
+      };
+
+      setTrainers(
+        trainers.map((t) => (t.id === trainer.id ? updatedTrainer : t))
+      );
+    } catch (err) {
+      console.error("Error updating trainer:", err);
     }
   };
 
-  getTrainers();
-}, []);
-
-const uploadTrainerAttachment = async (itemId: number, file: File) => {
-  // Delete old attachment if exists
-  const attachments = await web.lists
-    .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-    .items.getById(itemId)
-    .attachmentFiles.get();
-
-  for (const f of attachments) {
-    await web.lists
-      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-      .items.getById(itemId)
-      .attachmentFiles.getByName(f.FileName)
-      .delete();
-  }
-
-  // Add new attachment
-  const buffer = await file.arrayBuffer();
-  const uploaded = await web.lists
-    .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-    .items.getById(itemId)
-    .attachmentFiles.add(file.name, buffer);
-
-  return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
-};
-
-
-
-  // 🔹 Add a new trainer
-const addTrainer = async (trainer: any) => {
-  try {
-    const item = await web.lists
-      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-      .items.add({
-        Title: trainer.name,
-        FullName: trainer.name,
-        Email: trainer.email,
-        Phone: trainer.phone,
-        Address: trainer.address,
-        Gender: trainer.gender,
-        ExpertiseId: {
-          results: trainer.expertise.map((id: any) => parseInt(id)),
-        },
-      });
-
-    let imageUrl = "";
-    if (trainer.imageFile) {
-      imageUrl = await uploadTrainerAttachment(item.data.Id, trainer.imageFile);
-    }
-
-    const newTrainer = {
-      ...trainer,
-      id: item.data.Id.toString(),
-      imageUrl,
-    };
-    setTrainers([...trainers, newTrainer]);
-  } catch (err) {
-    console.error("Error adding trainer:", err);
-  }
-};
-  // 🔹 Update trainer
-const updateTrainer = async (trainer: any): Promise<void> => {
-  try {
-    await web.lists
-      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-      .items.getById(parseInt(trainer.id))
-      .update({
-        FullName: trainer.name,
-        Email: trainer.email,
-        Phone: trainer.phone,
-        Address: trainer.address,
-        Gender: trainer.gender,
-        ExpertiseId: {
-          results: trainer.expertise.map((id: any) => parseInt(id)),
-        },
-      });
-
-    let imageUrl = trainer.imageUrl || "";
-    if (trainer.imageFile) {
-      imageUrl = await uploadTrainerAttachment(parseInt(trainer.id), trainer.imageFile);
-    }
-
-    const updatedTrainer = {
-      ...trainer,
-      imageUrl,
-    };
-
-    setTrainers(
-      trainers.map((t) => (t.id === trainer.id ? updatedTrainer : t))
-    );
-  } catch (err) {
-    console.error("Error updating trainer:", err);
-  }
-};
-
   // 🔹 Delete trainer
-const deleteTrainer = async (id: string): Promise<void> => {
-  try {
-    await web.lists
-      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-      .items.getById(parseInt(id))
-      .delete();
+  const deleteTrainer = async (id: string): Promise<void> => {
+    try {
+      await web.lists
+        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+        .items.getById(parseInt(id))
+        .delete();
 
-    setTrainers(trainers.filter((t) => t.id !== id));
-  } catch (err) {
-    console.error("Error deleting trainer:", err);
-  }
-};
+      setTrainers(trainers.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error("Error deleting trainer:", err);
+    }
+  };
   /// gajendra
 
   const sanitizeUrl = (url?: string) => {
@@ -973,17 +898,12 @@ const deleteTrainer = async (id: string): Promise<void> => {
   };
 
   return {
-    getAssignments,
     expensesData,
+    getAssignments,
     expenses,
     addExpense,
     updateExpense,
     deleteExpense,
-    uploadImageToLibrary,
-    getImageUrl,
-    storeImageReference,
-    formatImageForHyperlinkPicture,
-    parseImageFromHyperlinkPicture,
     courses,
     trainers,
     students,

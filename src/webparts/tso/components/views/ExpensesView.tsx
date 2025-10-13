@@ -41,320 +41,202 @@ const FormTextArea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> &
 );
 
 
-    const ExpensesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data }) => {
+const ExpensesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
-
-    const initialFormState: any = {
+    const [formState, setFormState] = useState({
+      description: '',
+      category: 'Other',
+      amount: 0,
+      date: new Date().toISOString().substring(0,10),
+      comments: '',
+    });
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isImage, setIsImage] = useState(false);
+    const { expenses, addExpense, updateExpense, deleteExpense } = data;
+  
+    const handleOpenModal = (expense: any) => {
+      if (expense) {
+        setEditingExpense(expense);
+        setFormState({
+          description: expense.Description,
+          category: expense.Category || 'Other',
+          amount: expense.Amount,
+          date: expense.Date.substring(0,10),
+          comments: expense.Comments || ''
+        });
+  
+        const attachment = expense.Attachments?.[0];
+        if (attachment?.ServerRelativeUrl) {
+          const url = `${window.location.origin}${attachment.ServerRelativeUrl}`;
+          setPreviewUrl(url);
+          setIsImage(/\.(jpe?g|png|gif|bmp|webp)$/i.test(attachment.FileName || ''));
+        } else {
+          setPreviewUrl(null);
+          setIsImage(false);
+        }
+      } else {
+        setEditingExpense(null);
+        setFormState({
+          description: '',
+          category: 'Other',
+          amount: 0,
+          date: new Date().toISOString().substring(0,10),
+          comments: ''
+        });
+        setPreviewUrl(null);
+        setIsImage(false);
+      }
+      setSelectedFile(null);
+      setIsModalOpen(true);
+    };
+  
+    const handleCloseModal = () => {
+      setIsModalOpen(false);
+      setEditingExpense(null);
+      setFormState({
         description: '',
         category: 'Other',
         amount: 0,
-        date: new Date().toISOString(),
-        billUrl: '',
+        date: new Date().toISOString().substring(0,10),
         comments: ''
-      };
-    const [formState, setFormState] = useState(initialFormState);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const { expenses, addExpense, updateExpense, deleteExpense } = data;
-    
-    const handleOpenModal = (expense: any) => {
-        if (expense) {
-          setEditingExpense(expense);
-          setFormState((prev:any) => ({
-            ...prev,
-            description: expense.Description || '',
-            category: expense.Category || 'Other',
-            amount: expense.Amount || 0,
-            date: expense.Date ? new Date(expense.Date).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10),
-            comments: expense.Comments || '',
-            billUrl: expense.billUrl || expense.Reciept || ''
-          }));
-          setPreviewUrl(expense.billUrl || expense.Reciept || null);
-        } else {
-          setEditingExpense(null);
-          setFormState(initialFormState);
-          setPreviewUrl(null);
-        }
+      });
+      setPreviewUrl(null);
+      setSelectedFile(null);
+      setIsImage(false);
+    };
+  
+    const handleInputChange = (e:any) => {
+      const { name, value, type } = e.target;
+      setFormState((prev:any) => ({
+        ...prev,
+        [name]: type === 'number' ? parseFloat(value) || 0 : value
+      }));
+    };
+  
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0] || null;
+      if (file) {
+        if (file.size > 20 * 1024 * 1024) return alert('File size must be less than 20MB');
+        setSelectedFile(file);
+        setIsImage(file.type.startsWith('image/'));
+        setPreviewUrl(URL.createObjectURL(file));
+      } else {
         setSelectedFile(null);
-        setIsModalOpen(true);
-      };
-
-      const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setEditingExpense(null);
-        setFormState(initialFormState);
+        setPreviewUrl(null);
+        setIsImage(false);
+      }
     };
-
-    const handleInputChange = (e:any):any => {
-        const { name, value, type } = e.target;
-    
-        setFormState((prev: any) => ({
-          ...prev,
-          [name]: type === 'number' ? parseFloat(value) || 0 : value,
-        }));
-    };
-
-    const handleFileChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
-        const file: File | null = evt.target.files?.[0] || null;
-        
-        if (file) {
-          // Validate file type
-          if (!file.type.startsWith('image/')) {
-            alert('Please select an image file');
-            return;
-          }
-          
-          // Validate file size (max 10MB)
-          if (file.size > 10 * 1024 * 1024) {
-            alert('File size must be less than 10MB');
-            return;
-          }
-          
-          setSelectedFile(file);
-          
-          // Create preview URL
-          const url = URL.createObjectURL(file);
-          setPreviewUrl(url);
-        } else {
-          setSelectedFile(null);
-          setPreviewUrl(null);
-        }
-    };
-
+  
     const handleSubmit = () => {
-        if (formState.description && formState.amount > 0) {
-          const expenseData = {
-            ...formState,
-            file: selectedFile
-          };
-          
-          if (editingExpense) {
-            updateExpense({ ...editingExpense, ...expenseData });
-          } else {
-            addExpense(expenseData);
-          }
-          handleCloseModal();
-        } else {
-          alert('Please fill description and a valid amount.');
-        }
+      if (!formState.description || formState.amount <= 0)
+        return alert('Please fill description and a valid amount.');
+      const expenseData: any = { ...formState, file: selectedFile };
+      if (editingExpense) updateExpense({ ...editingExpense, ...expenseData });
+      else addExpense(expenseData);
+      handleCloseModal();
     };
-
+  
     const handleDelete = () => {
-        if (expenseToDelete) {
-          deleteExpense(expenseToDelete);
-          setExpenseToDelete(null);
-        }
-      };
-
+      if (expenseToDelete) {
+        deleteExpense(expenseToDelete);
+        setExpenseToDelete(null);
+      }
+    };
+  
     return (
-        <div>
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h1 className="h2">Expenses</h1>
-                <button 
-                    onClick={() => handleOpenModal(null)}
-                    className="btn btn-primary">
-                    Add Expense
-                </button>
-            </div>
-            <Table headers={['Description', 'Category', 'Amount', 'Date', 'Bill', 'Actions']}>
-                {expenses.map((item:any) => (
-                    <tr key={item.id} className="align-middle">
-                        <td className="p-3">
-                            <div className="fw-semibold">{item.Description}</div>
-                            {item.Comments&& <div className="small text-body-secondary">{item.Comments}</div>}
-                        </td>
-                        <td className="p-3">{item.Category}</td>
-                        <td className="p-3 text-danger fw-semibold">-₹{item.Amount.toLocaleString()}</td>
-                        <td className="p-3">{item.Date.substring(0, 10)}</td>
-                        <td className="p-3 text-center">
-                            {item.billUrl ? (
-                                <a href={item.billUrl} target="_blank" rel="noopener noreferrer" className="text-primary">
-                                    <DocumentIcon />
-                                </a>
-                            ) : (
-                                <span>-</span>
-                            )}
-                        </td>
-                        <td className="p-3">
-                            <div className="d-flex gap-2">
-                                <button onClick={() => handleOpenModal(item)} className="btn btn-sm btn-outline-secondary">
-                                    <EditIcon />
-                                </button>
-                                <button onClick={() => setExpenseToDelete(item)} className="btn btn-sm btn-outline-danger">
-                                    <DeleteIcon />
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                ))}
-            </Table>
-
-            {expenseToDelete && (
-                <ConfirmationModal
-                    title="Delete Expense"
-                    message={`Are you sure you want to delete the expense "${expenseToDelete.description}"?`}
-                    onConfirm={handleDelete}
-                    onCancel={() => setExpenseToDelete(null)}
-                />
-            )}
-
-            {/* Add/Edit Modal */}
-            <Modal 
-            show={isModalOpen} 
-            title={editingExpense ? "Edit Expense" : "Add New Expense"} 
-            onClose={handleCloseModal}
-            >
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-                {/* Description */}
-                <FormInput 
-                label="Description" 
-                name="description" 
-                value={formState.description} 
-                onChange={handleInputChange} 
-                required 
-                />
-
-                {/* Category + Amount */}
-                <div className="row">
-                <div className="col-md-6">
-                    <FormSelect 
-                    label="Category" 
-                    name="category" 
-                    value={formState.category} 
-                    onChange={handleInputChange} 
-                    required
-                    >
-                    <option value="Salary">Salary</option>
-                    <option value="Utilities">Utilities</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Rent">Rent</option>
-                    <option value="Other">Other</option>
-                    </FormSelect>
-                </div>
-                <div className="col-md-6">
-                    <FormInput 
-                    label="Amount (₹)" 
-                    name="amount" 
-                    type="number" 
-                    value={formState.amount > 0 ? formState.amount : ''} 
-                    onChange={handleInputChange} 
-                    required 
-                    />
-                </div>
-                </div>
-
-                {/* Date */}
-                <FormInput 
-                label="Date" 
-                name="date" 
-                type="date" 
-                value={formState.date} 
-                onChange={handleInputChange} 
-                required 
-                />
-
-                {/* Comments */}
-                <FormTextArea 
-                label="Comments" 
-                name="comments" 
-                value={formState.comments ?? ''} 
-                onChange={handleInputChange} 
-                />
-
-                {/* Bill / Receipt */}
-                <div className="mb-3">
-                <label className="form-label">Bill/Receipt</label>
-                <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleFileChange} 
-                    className="form-control"
-                />
-
-                {/* Preview / Existing Image */}
-                {previewUrl && (
-                    <div className="mt-3">
-                    {editingExpense && !selectedFile ? (
-                        // Existing expense image
-                        <div>
-                        <img 
-                            src={previewUrl} 
-                            alt="Current receipt" 
-                            className="img-thumbnail mb-2" 
-                            style={{ maxHeight: "200px" }}
-                        />
-                        <div>
-                            <span className="d-block fw-bold">Current receipt</span>
-                            <a 
-                            href={previewUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-decoration-underline"
-                            >
-                            View full size
-                            </a>
-                        </div>
-                        </div>
-                    ) : (
-                        // New upload preview
-                        <div>
-                        <img 
-                            src={previewUrl} 
-                            alt="Preview" 
-                            className="img-thumbnail mb-2" 
-                            style={{ maxHeight: "200px" }}
-                        />
-                        <div>
-                            <span className="d-block">
-                            {selectedFile ? "New image selected" : "Image preview"}
-                            </span>
-                            {selectedFile && (
-                            <span className="text-muted small">
-                                {(selectedFile.size / 1024).toFixed(1)} KB
-                            </span>
-                            )}
-                        </div>
-                        </div>
-                    )}
-
-                    {/* Remove button */}
-                    <button 
-                        type="button" 
-                        onClick={() => {
-                        setSelectedFile(null);
-                        setPreviewUrl(null);
-                        }} 
-                        className="btn btn-sm btn-outline-danger mt-2"
-                    >
-                        Remove Image
-                    </button>
-                    </div>
-                )}
-                </div>
-
-                {/* Modal Footer */}
-                <div className="d-flex justify-content-end pt-3 mt-3 border-top">
-                <button 
-                    type="button" 
-                    onClick={handleCloseModal} 
-                    className="btn btn-secondary me-2"
-                >
-                    Cancel
-                </button>
-                <button 
-                    type="submit" 
-                    className="btn btn-primary"
-                >
-                    {editingExpense ? "Save Changes" : "Add Expense"}
-                </button>
-                </div>
-            </form>
-            </Modal>
-
+      <div>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1 className="h2">Expenses</h1>
+          <button onClick={() => handleOpenModal(null)} className="btn btn-primary">Add Expense</button>
         </div>
+  
+        <Table headers={['Description','Category','Amount','Date','Attachment','Actions']}>
+          {expenses.map((item:any) => (
+            <tr key={item.Id} className="align-middle">
+              <td className="p-3">
+                <div className="fw-semibold">{item.Description}</div>
+                {item.Comments && <div className="small text-body-secondary">{item.Comments}</div>}
+              </td>
+              <td className="p-3">{item.Category}</td>
+              <td className="p-3 text-danger fw-semibold">-₹{item.Amount}</td>
+              <td className="p-3">{item.Date}</td>
+              <td className="p-3 text-center">
+                {item.Attachments?.[0]?.ServerRelativeUrl ? (
+                  <a href={`${window.location.origin}${item.Attachments[0].ServerRelativeUrl}`} target="_blank" rel="noopener noreferrer">
+                    <DocumentIcon />
+                  </a>
+                ) : <span>-</span>}
+              </td>
+              <td className="p-3">
+                <div className="d-flex gap-2">
+                  <button onClick={() => handleOpenModal(item)} className="btn btn-sm btn-outline-secondary"><EditIcon /></button>
+                  <button onClick={() => setExpenseToDelete(item)} className="btn btn-sm btn-outline-danger"><DeleteIcon /></button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </Table>
+  
+        {expenseToDelete && (
+          <ConfirmationModal
+            title="Delete Expense"
+            message={`Are you sure you want to delete the expense "${expenseToDelete.description}"?`}
+            onConfirm={handleDelete}
+            onCancel={() => setExpenseToDelete(null)}
+          />
+        )}
+  
+        <Modal show={isModalOpen} title={editingExpense ? "Edit Expense" : "Add New Expense"} onClose={handleCloseModal}>
+          <form onSubmit={(e)=>{ e.preventDefault(); handleSubmit(); }}>
+            <FormInput label="Description" name="description" value={formState.description} onChange={handleInputChange} required />
+            <div className="row">
+              <div className="col-md-6">
+                <FormSelect label="Category" name="category" value={formState.category} onChange={handleInputChange} required>
+                  <option value="Salary">Salary</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Rent">Rent</option>
+                  <option value="Other">Other</option>
+                </FormSelect>
+              </div>
+              <div className="col-md-6">
+                <FormInput label="Amount (₹)" name="amount" type="number" value={formState.amount>0?formState.amount:''} onChange={handleInputChange} required />
+              </div>
+            </div>
+            <FormInput label="Date" name="date" type="date" value={formState.date} onChange={handleInputChange} required />
+            <FormTextArea label="Comments" name="comments" value={formState.comments} onChange={handleInputChange} />
+  
+            {/* ✅ File Upload Section */}
+            <div className="mb-3">
+              <label className="form-label">Attachment (Any File Type)</label>
+              <input type="file" accept="*" onChange={handleFileChange} className="form-control"/>
+  
+              {previewUrl && (
+                <div className="mt-3">
+                  {isImage ? (
+                    <img src={previewUrl} alt="preview" className="img-thumbnail mb-2" style={{maxHeight:"200px"}} />
+                  ) : (
+                    <div className="alert alert-info d-flex align-items-center gap-2 p-2">
+                      <DocumentIcon />
+                      <span>{selectedFile ? selectedFile.name : 'Attached File'}</span>
+                    </div>
+                  )}
+                  <button type="button" onClick={()=>{ setSelectedFile(null); setPreviewUrl(null); setIsImage(false); }} className="btn btn-sm btn-outline-danger mt-2">Remove File</button>
+                </div>
+              )}
+            </div>
+  
+            <div className="d-flex justify-content-end pt-3 mt-3 border-top">
+              <button type="button" onClick={handleCloseModal} className="btn btn-secondary me-2">Cancel</button>
+              <button type="submit" className="btn btn-primary">{editingExpense ? "Save Changes" : "Add Expense"}</button>
+            </div>
+          </form>
+        </Modal>
+      </div>
     );
-};
+  };
 
 export default ExpensesView;
