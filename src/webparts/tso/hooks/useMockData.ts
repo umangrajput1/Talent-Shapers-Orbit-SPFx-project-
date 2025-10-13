@@ -272,128 +272,128 @@ export const useMockData = () => {
 
   // assignment
 
-// 🔹 Upload attachment to SharePoint list item
-const uploadAttachment = async (itemId: number, file: File, listId: string) => {
-  const list = web.lists.getById(listId);
+  // 🔹 Upload attachment to SharePoint list item
+  const uploadAttachment = async (itemId: number, file: File, listId: string) => {
+    const list = web.lists.getById(listId);
 
-  // Delete old attachments first (to overwrite)
-  const existingAttachments = await list.items.getById(itemId).attachmentFiles.get();
-  for (const f of existingAttachments) {
-    await list.items.getById(itemId).attachmentFiles.getByName(f.FileName).delete();
-  }
-
-  // Add new attachment
-  const buffer = await file.arrayBuffer();
-  const uploaded = await list.items.getById(itemId).attachmentFiles.add(file.name, buffer);
-  return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
-};
-
-// 🔹 CREATE
-const addAssignment = async (assignment: any) => {
-  try {
-    const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
-    // 1️⃣ Create item without file first
-    const addRes = await web.lists.getById(listId).items.add({
-      Title: assignment.title,
-      CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
-      StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
-      TrainerId: assignment.trainerId ? parseInt(assignment.trainerId) : null,
-      DueDate: assignment.dueDate,
-      Status: { results: ["Pending"] }
-    });
-
-    // 2️⃣ Upload file as attachment if present
-    if (assignment.assignmentFile) {
-      await uploadAttachment(addRes.data.Id, assignment.assignmentFile, listId);
-    }
-    await getAssignments();
-  } catch (err) {
-    console.error("Error adding assignment:", err);
-  }
-};
-
-// 🔹 READ
-const getAssignments = async () => {
-  try {
-    const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
-    const items = await web.lists.getById(listId).items.select(
-      "Id,Title,Course/Id,Course/Title,Student/Id,Student/Title,Trainer/Id,Trainer/Title,DueDate,Status,Attachments"
-    ).expand("Course,Student,Trainer").get();
-
-    const mappedData = await Promise.all(
-      items.map(async (item: any) => {
-        // Get attachments
-        const attachments = item.Attachments
-          ? await web.lists.getById(listId).items.getById(item.Id).attachmentFiles.get()
-          : [];
-
-        return {
-          id: item.Id.toString(),
-          title: item.Title,
-          courseId: item.Course?.Id?.toString() || "",
-          courseName: item.Course?.Title || "",
-          studentId: item.Student?.Id?.toString() || "",
-          studentName: item.Student?.Title || "",
-          trainerId: item.Trainer?.Id?.toString() || "",
-          trainerName: item.Trainer?.Title || "",
-          dueDate: item.DueDate,
-          status: item.Status || "Pending",
-          attachmentFiles: attachments, // array of attachments
-          assignmentFileUrl: attachments.length > 0 ? `${window.location.origin}${attachments[0].ServerRelativeUrl}` : "",
-        };
-      })
-    );
-
-    setAssignments(mappedData);
-  } catch (err) {
-    console.error("Error fetching assignments:", err);
-    throw err;
-  }
-};
-
-// 🔹 UPDATE
-const updateAssignment = async (assignment: any) => {
-  try {
-    const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
-
-    // Update item fields first
-    await web.lists.getById(listId).items.getById(parseInt(assignment.id)).update({
-      Title: assignment.title,
-      CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
-      StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
-      TrainerId: assignment.trainerId ? parseInt(assignment.trainerId) : null,
-      DueDate: assignment.dueDate,
-      Status: assignment.status || "Pending",
-    });
-
-    // Upload new attachment if provided (overwrites old)
-    if (assignment.assignmentFile) {
-      await uploadAttachment(parseInt(assignment.id), assignment.assignmentFile, listId);
+    // Delete old attachments first (to overwrite)
+    const existingAttachments = await list.items.getById(itemId).attachmentFiles.get();
+    for (const f of existingAttachments) {
+      await list.items.getById(itemId).attachmentFiles.getByName(f.FileName).delete();
     }
 
-    await getAssignments();
-  } catch (err) {
-    console.error("Error updating assignment:", err);
-    throw err;
-  }
-};
+    // Add new attachment
+    const buffer = await file.arrayBuffer();
+    const uploaded = await list.items.getById(itemId).attachmentFiles.add(file.name, buffer);
+    return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
+  };
 
-// 🔹 DELETE
-const deleteAssignment = async (id: string) => {
-  try {
-    const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
-    await web.lists.getById(listId).items.getById(parseInt(id)).delete();
-    await getAssignments();
-  } catch (err) {
-    console.error("Error deleting assignment:", err);
-    throw err;
-  }
-};
+  // 🔹 CREATE
+  const addAssignment = async (assignment: any) => {
+    try {
+      const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
+      // 1️⃣ Create item without file first
+      const addRes = await web.lists.getById(listId).items.add({
+        Title: assignment.title,
+        CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
+        StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
+        TrainerId: assignment.trainerId ? parseInt(assignment.trainerId) : null,
+        DueDate: assignment.dueDate,
+        Status: { results: ["Pending"] }
+      });
 
-// 🔹 Call getAssignments on mount
-useEffect(() => {
-  getAssignments();
-}, []);
+      // 2️⃣ Upload file as attachment if present
+      if (assignment.assignmentFile) {
+        await uploadAttachment(addRes.data.Id, assignment.assignmentFile, listId);
+      }
+      await getAssignments();
+    } catch (err) {
+      console.error("Error adding assignment:", err);
+    }
+  };
+
+  // 🔹 READ
+  const getAssignments = async () => {
+    try {
+      const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
+      const items = await web.lists.getById(listId).items.select(
+        "Id,Title,Course/Id,Course/Title,Student/Id,Student/Title,Trainer/Id,Trainer/Title,DueDate,Status,Attachments"
+      ).expand("Course,Student,Trainer").get();
+
+      const mappedData = await Promise.all(
+        items.map(async (item: any) => {
+          // Get attachments
+          const attachments = item.Attachments
+            ? await web.lists.getById(listId).items.getById(item.Id).attachmentFiles.get()
+            : [];
+
+          return {
+            id: item.Id.toString(),
+            title: item.Title,
+            courseId: item.Course?.Id?.toString() || "",
+            courseName: item.Course?.Title || "",
+            studentId: item.Student?.Id?.toString() || "",
+            studentName: item.Student?.Title || "",
+            trainerId: item.Trainer?.Id?.toString() || "",
+            trainerName: item.Trainer?.Title || "",
+            dueDate: item.DueDate,
+            status: item.Status || "Pending",
+            attachmentFiles: attachments, // array of attachments
+            assignmentFileUrl: attachments.length > 0 ? `${window.location.origin}${attachments[0].ServerRelativeUrl}` : "",
+          };
+        })
+      );
+
+      setAssignments(mappedData);
+    } catch (err) {
+      console.error("Error fetching assignments:", err);
+      throw err;
+    }
+  };
+
+  // 🔹 UPDATE
+  const updateAssignment = async (assignment: any) => {
+    try {
+      const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
+
+      // Update item fields first
+      await web.lists.getById(listId).items.getById(parseInt(assignment.id)).update({
+        Title: assignment.title,
+        CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
+        StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
+        TrainerId: assignment.trainerId ? parseInt(assignment.trainerId) : null,
+        DueDate: assignment.dueDate,
+        Status: assignment.status || "Pending",
+      });
+
+      // Upload new attachment if provided (overwrites old)
+      if (assignment.assignmentFile) {
+        await uploadAttachment(parseInt(assignment.id), assignment.assignmentFile, listId);
+      }
+
+      await getAssignments();
+    } catch (err) {
+      console.error("Error updating assignment:", err);
+      throw err;
+    }
+  };
+
+  // 🔹 DELETE
+  const deleteAssignment = async (id: string) => {
+    try {
+      const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
+      await web.lists.getById(listId).items.getById(parseInt(id)).delete();
+      await getAssignments();
+    } catch (err) {
+      console.error("Error deleting assignment:", err);
+      throw err;
+    }
+  };
+
+  // 🔹 Call getAssignments on mount
+  useEffect(() => {
+    getAssignments();
+  }, []);
 
   // payment module
 
@@ -479,163 +479,163 @@ useEffect(() => {
 
 
   // trainer model
-useEffect(() => {
-  const getTrainers = async (): Promise<void> => {
-    try {
-      const list = await web.lists
-        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-        .items.select(
-          "Id,Title,FullName,Email,Phone,Gender,Address,Expertise/Id,Expertise/Title,Attachments"
-        )
-        .expand("Expertise")
-        .get();
+  useEffect(() => {
+    const getTrainers = async (): Promise<void> => {
+      try {
+        const list = await web.lists
+          .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+          .items.select(
+            "Id,Title,FullName,Email,Phone,Gender,Address,Expertise/Id,Expertise/Title,Attachments"
+          )
+          .expand("Expertise")
+          .get();
 
-      const formatted = await Promise.all(
-        list.map(async (item: any) => {
-          // Get attachments if any
-          const attachments = item.Attachments
-            ? await web.lists
+        const formatted = await Promise.all(
+          list.map(async (item: any) => {
+            // Get attachments if any
+            const attachments = item.Attachments
+              ? await web.lists
                 .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
                 .items.getById(item.Id)
                 .attachmentFiles.get()
-            : [];
+              : [];
 
-          // Take first attachment as profile picture (if multiple)
-          const imageUrl =
-            attachments.length > 0
-              ? `${window.location.origin}${attachments[0].ServerRelativeUrl}`
-              : "";
+            // Take first attachment as profile picture (if multiple)
+            const imageUrl =
+              attachments.length > 0
+                ? `${window.location.origin}${attachments[0].ServerRelativeUrl}`
+                : "";
 
-          return {
-            id: item.Id.toString(),
-            name: item.FullName,
-            email: item.Email,
-            phone: item.Phone,
-            address: item.Address,
-            gender: item.Gender,
-            imageUrl,
-            expertise: item.Expertise.map((ex: any) => ex.Id.toString()),
-            attachments, // store all attachments
-          };
-        })
-      );
+            return {
+              id: item.Id.toString(),
+              name: item.FullName,
+              email: item.Email,
+              phone: item.Phone,
+              address: item.Address,
+              gender: item.Gender,
+              imageUrl,
+              expertise: item.Expertise.map((ex: any) => ex.Id.toString()),
+              attachments, // store all attachments
+            };
+          })
+        );
 
-      setTrainers(formatted);
-    } catch (err) {
-      console.error("Error fetching trainers:", err);
-    }
-  };
+        setTrainers(formatted);
+      } catch (err) {
+        console.error("Error fetching trainers:", err);
+      }
+    };
 
-  getTrainers();
-}, []);
+    getTrainers();
+  }, []);
 
-const uploadTrainerAttachment = async (itemId: number, file: File) => {
-  // Delete old attachment if exists
-  const attachments = await web.lists
-    .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-    .items.getById(itemId)
-    .attachmentFiles.get();
-
-  for (const f of attachments) {
-    await web.lists
+  const uploadTrainerAttachment = async (itemId: number, file: File) => {
+    // Delete old attachment if exists
+    const attachments = await web.lists
       .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
       .items.getById(itemId)
-      .attachmentFiles.getByName(f.FileName)
-      .delete();
-  }
+      .attachmentFiles.get();
 
-  // Add new attachment
-  const buffer = await file.arrayBuffer();
-  const uploaded = await web.lists
-    .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-    .items.getById(itemId)
-    .attachmentFiles.add(file.name, buffer);
+    for (const f of attachments) {
+      await web.lists
+        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+        .items.getById(itemId)
+        .attachmentFiles.getByName(f.FileName)
+        .delete();
+    }
 
-  return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
-};
+    // Add new attachment
+    const buffer = await file.arrayBuffer();
+    const uploaded = await web.lists
+      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+      .items.getById(itemId)
+      .attachmentFiles.add(file.name, buffer);
+
+    return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
+  };
 
 
 
   // 🔹 Add a new trainer
-const addTrainer = async (trainer: any) => {
-  try {
-    const item = await web.lists
-      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-      .items.add({
-        Title: trainer.name,
-        FullName: trainer.name,
-        Email: trainer.email,
-        Phone: trainer.phone,
-        Address: trainer.address,
-        Gender: trainer.gender,
-        ExpertiseId: {
-          results: trainer.expertise.map((id: any) => parseInt(id)),
-        },
-      });
+  const addTrainer = async (trainer: any) => {
+    try {
+      const item = await web.lists
+        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+        .items.add({
+          Title: trainer.name,
+          FullName: trainer.name,
+          Email: trainer.email,
+          Phone: trainer.phone,
+          Address: trainer.address,
+          Gender: trainer.gender,
+          ExpertiseId: {
+            results: trainer.expertise.map((id: any) => parseInt(id)),
+          },
+        });
 
-    let imageUrl = "";
-    if (trainer.imageFile) {
-      imageUrl = await uploadTrainerAttachment(item.data.Id, trainer.imageFile);
+      let imageUrl = "";
+      if (trainer.imageFile) {
+        imageUrl = await uploadTrainerAttachment(item.data.Id, trainer.imageFile);
+      }
+
+      const newTrainer = {
+        ...trainer,
+        id: item.data.Id.toString(),
+        imageUrl,
+      };
+      setTrainers([...trainers, newTrainer]);
+    } catch (err) {
+      console.error("Error adding trainer:", err);
     }
-
-    const newTrainer = {
-      ...trainer,
-      id: item.data.Id.toString(),
-      imageUrl,
-    };
-    setTrainers([...trainers, newTrainer]);
-  } catch (err) {
-    console.error("Error adding trainer:", err);
-  }
-};
+  };
   // 🔹 Update trainer
-const updateTrainer = async (trainer: any): Promise<void> => {
-  try {
-    await web.lists
-      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-      .items.getById(parseInt(trainer.id))
-      .update({
-        FullName: trainer.name,
-        Email: trainer.email,
-        Phone: trainer.phone,
-        Address: trainer.address,
-        Gender: trainer.gender,
-        ExpertiseId: {
-          results: trainer.expertise.map((id: any) => parseInt(id)),
-        },
-      });
+  const updateTrainer = async (trainer: any): Promise<void> => {
+    try {
+      await web.lists
+        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+        .items.getById(parseInt(trainer.id))
+        .update({
+          FullName: trainer.name,
+          Email: trainer.email,
+          Phone: trainer.phone,
+          Address: trainer.address,
+          Gender: trainer.gender,
+          ExpertiseId: {
+            results: trainer.expertise.map((id: any) => parseInt(id)),
+          },
+        });
 
-    let imageUrl = trainer.imageUrl || "";
-    if (trainer.imageFile) {
-      imageUrl = await uploadTrainerAttachment(parseInt(trainer.id), trainer.imageFile);
+      let imageUrl = trainer.imageUrl || "";
+      if (trainer.imageFile) {
+        imageUrl = await uploadTrainerAttachment(parseInt(trainer.id), trainer.imageFile);
+      }
+
+      const updatedTrainer = {
+        ...trainer,
+        imageUrl,
+      };
+
+      setTrainers(
+        trainers.map((t) => (t.id === trainer.id ? updatedTrainer : t))
+      );
+    } catch (err) {
+      console.error("Error updating trainer:", err);
     }
-
-    const updatedTrainer = {
-      ...trainer,
-      imageUrl,
-    };
-
-    setTrainers(
-      trainers.map((t) => (t.id === trainer.id ? updatedTrainer : t))
-    );
-  } catch (err) {
-    console.error("Error updating trainer:", err);
-  }
-};
+  };
 
   // 🔹 Delete trainer
-const deleteTrainer = async (id: string): Promise<void> => {
-  try {
-    await web.lists
-      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-      .items.getById(parseInt(id))
-      .delete();
+  const deleteTrainer = async (id: string): Promise<void> => {
+    try {
+      await web.lists
+        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+        .items.getById(parseInt(id))
+        .delete();
 
-    setTrainers(trainers.filter((t) => t.id !== id));
-  } catch (err) {
-    console.error("Error deleting trainer:", err);
-  }
-};
+      setTrainers(trainers.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error("Error deleting trainer:", err);
+    }
+  };
   /// gajendra
 
   const sanitizeUrl = (url?: string) => {
@@ -663,7 +663,7 @@ const deleteTrainer = async (id: string): Promise<void> => {
     return new File([blob], fileName, { type: blob.type });
   };
 
-  const fetchAPIData = async (): Promise<void> => {
+  const fetchCourses = async (): Promise<void> => {
     try {
       const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
       const res = await web.lists
@@ -685,116 +685,86 @@ const deleteTrainer = async (id: string): Promise<void> => {
 
   const fetchAPIStudent = async (): Promise<Student[]> => {
     try {
-      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
 
       const res = await web.lists
-        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
-        .items.select(
-          "Id",
-          "Title",
-          "emailAddress",
-          "phoneNumber",
-          "gender",
-          "address",
-          "status",
-          "profilePicture",
-          "joinDate",
-          "courses/Id",
-          "courses/Title"
+        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+        .items
+        .select(
+          'Id',
+          'Title',
+          'emailAddress',
+          'phoneNumber',
+          'gender',
+          'address',
+          'status',
+          'joinDate',
+          'courses/Id',
+          'courses/Title'
         )
-        .expand("courses")
+        .expand('courses')
         .getAll();
 
-      const mappedStudents: Student[] = res.map((item) => {
-        // Prefer profilePicture.Url if available (Picture/Hyperlink field), otherwise try fileName fallback
-        let imageUrl = "";
-        if (item.profilePicture && item.profilePicture.Url) {
-          imageUrl = sanitizeUrl(item.profilePicture.Url);
-        } else if (item.profilePicture && item.profilePicture.fileName) {
-          // Fallback to the thumbnails path if your library creates thumbnails this way
-          imageUrl = `https://smalsusinfolabs.sharepoint.com/sites/TSO/Pictures/Forms/Thumbnails/StudentImage/${item.profilePicture.fileName}`;
-        } else {
-          // Default placeholder
-          imageUrl = `https://i.pravatar.cc/150?u=student${item.Id}`;
-        }
+      console.log("Raw SharePoint response:", res);
 
-        return {
-          id: String(item.Id),
-          name: item.Title || "",
-          email: item.emailAddress || "",
-          phone: String(item.phoneNumber || ""),
-          gender: item.gender || "",
-          address: item.address || "",
-          status: item.status || "Active",
-          joinDate: item.joinDate
-            ? new Date(item.joinDate).toISOString().split("T")[0]
-            : "",
-          imageUrl, // Use constructed/sanitized URL
-          courseIds: item.courses
-            ? item.courses.map((c: { Id: number }) => String(c.Id))
-            : [],
-          courseNames: item.courses
-            ? item.courses.map((c: { Title: string }) => c.Title)
-            : [],
-        };
-      });
+      // 🧠 map function ko async banaya hai
+      const mappedStudents: Student[] = await Promise.all(
+        res.map(async (item) => {
+          let imageUrl = "";
+          try {
+            // Fetch attachment files for this item
+            const attachments = await web.lists
+              .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+              .items.getById(item.Id)
+              .attachmentFiles.get();
+
+            if (attachments && attachments.length > 0) {
+              imageUrl = sanitizeUrl(attachments[0].ServerRelativeUrl || attachments[0].ServerRelativePath || '');
+            } else {
+              imageUrl = `https://i.pravatar.cc/150?u=student${item.Id}`;
+            }
+          } catch (err) {
+            console.warn("Could not fetch attachments for item", item.Id, err);
+            imageUrl = `https://i.pravatar.cc/150?u=student${item.Id}`;
+          }
+
+          return {
+            id: String(item.Id),
+            name: item.Title || "",
+            email: item.emailAddress || "",
+            phone: String(item.phoneNumber || ""),
+            gender: item.gender || "",
+            address: item.address || "",
+            status: item.status || "Active",
+            joinDate: item.joinDate ? new Date(item.joinDate).toISOString().split("T")[0] : "",
+            imageUrl,
+            courseIds: item.courses ? item.courses.map((c: { Id: number }) => String(c.Id)) : [],
+            courseNames: item.courses ? item.courses.map((c: { Title: string }) => c.Title) : []
+          };
+        })
+      );
+
+      console.log("Mapped students with images:", mappedStudents);
 
       setStudents(mappedStudents);
+      console.log("Students fetched successfully:", mappedStudents.length, "students");
+
       return mappedStudents;
+
     } catch (error) {
       console.error("fetchStudents error ::", error);
       return [];
     }
   };
 
-  // Upload helper for student images
-  const uploadStudentImage = async (file: File) => {
-    const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-    const folder = web.getFolderByServerRelativeUrl(
-      "/sites/TSO/Pictures/StudentImage"
-    );
-    const uploadedFile = await folder.files.add(file.name, file, true);
-    return uploadedFile.data.ServerRelativeUrl; // ServerRelativeUrl
-  };
-
   useEffect(() => {
-    fetchAPIData().catch(console.error);
+    fetchCourses().catch(console.error);
     fetchAPIStudent().catch(console.error);
   }, []);
 
-  const addStudent = async (
-    data: Omit<Student, "id">
-  ): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
+  const addStudent = async (data: Omit<Student, 'id'> & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
     try {
-      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-
-      // Prepare profilePicture field — handle File or base64 data URL or already relative URL
-      let profileField: any = null;
-
-      if ((data as any).imageFile) {
-        // If caller provided a File object (recommended)
-        const serverRel = await uploadStudentImage(
-          (data as any).imageFile as File
-        );
-        profileField = { Url: serverRel, Description: "Profile Picture" };
-      } else if (data.imageUrl && data.imageUrl.startsWith("data:")) {
-        // If caller provided base64/data URL string
-        const blob = dataUrlToBlob(data.imageUrl);
-        const fileName = `student_${Date.now()}.png`;
-        const file = blobToFile(blob, fileName);
-        const serverRel = await uploadStudentImage(file);
-        profileField = { Url: serverRel, Description: "Profile Picture" };
-      } else if (
-        data.imageUrl &&
-        (data.imageUrl.startsWith("/") ||
-          data.imageUrl.startsWith(window.location.origin))
-      ) {
-        // If imageUrl is already a server relative OR full URL, convert to relative for SharePoint field
-        const rel = data.imageUrl.startsWith(window.location.origin)
-          ? data.imageUrl.replace(window.location.origin, "")
-          : data.imageUrl;
-        profileField = { Url: rel, Description: "Profile Picture" };
-      }
+      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
 
       const studentData: any = {
         Title: data.name,
@@ -804,58 +774,50 @@ const deleteTrainer = async (id: string): Promise<void> => {
         address: data.address,
         status: data.status || "Active",
         joinDate: data.joinDate || new Date().toISOString().split("T")[0],
-        coursesId: { results: data.courseIds?.map((id) => Number(id)) || [] },
+        coursesId: { results: data.courseIds?.map(id => Number(id)) || [] },
+        // do NOT set profilePicture field - we will use attachment
       };
 
-      if (profileField) {
-        studentData.profilePicture = profileField; // Picture/Hyperlink field value
-      }
-
+      // 1) Create item first
       const result = await web.lists
-        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
+        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items.add(studentData);
 
+      const newItemId = result.data.Id;
+
+      // 2) If caller provided a File object, upload as attachment to created item
+      if ((data as any).imageFile) {
+        const file: File = (data as any).imageFile as File;
+        await web.lists
+          .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+          .items
+          .getById(newItemId)
+          .attachmentFiles.add(file.name, file);
+      } else if (data.imageUrl && data.imageUrl.startsWith('data:')) {
+        // optional: handle base64 by converting to File then attach
+        const blob = dataUrlToBlob(data.imageUrl);
+        const fileName = `student_${Date.now()}.png`;
+        const file = blobToFile(blob, fileName);
+        await web.lists
+          .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+          .items
+          .getById(newItemId)
+          .attachmentFiles.add(file.name, file);
+      }
+
+      // Refresh local data
       await fetchAPIStudent();
 
       return { success: true, data: result };
     } catch (error) {
-      console.error("addStudent error ::", error);
+      console.error("addStudent (attachments) error ::", error);
       return { success: false, error: error };
     }
   };
 
-  const updateStudent = async (
-    updatedStudent: Student
-  ): Promise<{ success: boolean; error?: unknown }> => {
+  const updateStudent = async (updatedStudent: Student & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; error?: unknown }> => {
     try {
-      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-
-      // Prepare profilePicture update logic
-      let profileFieldUpdate: any = null;
-
-      if ((updatedStudent as any).imageFile) {
-        // If a new File object is provided
-        const serverRel = await uploadStudentImage(
-          (updatedStudent as any).imageFile as File
-        );
-        profileFieldUpdate = { Url: serverRel, Description: "Profile Picture" };
-      } else if (
-        updatedStudent.imageUrl &&
-        updatedStudent.imageUrl.startsWith("data:")
-      ) {
-        // If imageUrl is base64 data, upload it
-        const blob = dataUrlToBlob(updatedStudent.imageUrl);
-        const fileName = `student_${Date.now()}.png`;
-        const file = blobToFile(blob, fileName);
-        const serverRel = await uploadStudentImage(file);
-        profileFieldUpdate = { Url: serverRel, Description: "Profile Picture" };
-      } else if (updatedStudent.imageUrl) {
-        // If imageUrl is full URL or relative path, convert to relative path for SharePoint
-        const rel = updatedStudent.imageUrl.startsWith(window.location.origin)
-          ? updatedStudent.imageUrl.replace(window.location.origin, "")
-          : updatedStudent.imageUrl;
-        profileFieldUpdate = { Url: rel, Description: "Profile Picture" };
-      }
+      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
 
       const updateData: any = {
         Title: updatedStudent.name,
@@ -865,39 +827,64 @@ const deleteTrainer = async (id: string): Promise<void> => {
         address: updatedStudent.address,
         status: updatedStudent.status,
         joinDate: updatedStudent.joinDate,
-        coursesId: {
-          results: updatedStudent.courseIds?.map((id) => Number(id)) || [],
-        },
+        coursesId: { results: updatedStudent.courseIds?.map(id => Number(id)) || [] }
       };
 
-      if (profileFieldUpdate) {
-        updateData.profilePicture = profileFieldUpdate;
-      }
-
+      // 1) Update list item fields (no attachment yet)
       await web.lists
-        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
+        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items.getById(Number(updatedStudent.id))
         .update(updateData);
 
+      // 2) If new file provided, remove old attachments and add new one
+      if ((updatedStudent as any).imageFile) {
+        const item = web.lists.getById('25a7c502-9910-498e-898b-a0b37888a15e').items.getById(Number(updatedStudent.id));
+        // Delete existing attachments (optional, to keep single profile image)
+        try {
+          const existing = await item.attachmentFiles.get();
+          for (const a of existing) {
+            // delete by name
+            await web.lists
+              .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+              .items
+              .getById(Number(updatedStudent.id))
+              .attachmentFiles.getByName(a.FileName)
+              .delete();
+          }
+        } catch (err) {
+          console.warn("Could not delete existing attachments", err);
+        }
+
+        // Add new
+        const file: File = (updatedStudent as any).imageFile as File;
+        await web.lists
+          .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+          .items
+          .getById(Number(updatedStudent.id))
+          .attachmentFiles.add(file.name, file);
+      }
+
+      // Refresh local data after update
       await fetchAPIStudent();
 
       return { success: true };
     } catch (error) {
-      console.error("updateStudent error ::", error);
+      console.error("updateStudent (attachments) error ::", error);
       return { success: false, error: error };
     }
   };
 
-  const deleteStudent = async (
-    studentId: string
-  ): Promise<{ success: boolean; error?: unknown }> => {
+
+  const deleteStudent = async (studentId: string): Promise<{ success: boolean; error?: unknown }> => {
     try {
-      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
 
       await web.lists
-        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
+        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items.getById(Number(studentId))
         .delete();
+
+      console.log("Student deleted successfully!");
 
       await fetchAPIStudent();
 
@@ -907,6 +894,7 @@ const deleteTrainer = async (id: string): Promise<void> => {
       return { success: false, error: error };
     }
   };
+
 
   const addCourse = async (data: Omit<Course, "id">): Promise<void> => {
     try {
