@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { useState } from 'react';
+
+import React, { useState } from 'react';
 import Table from '../common/Table';
 import Modal from '../common/Modal';
 import ConfirmationModal from '../common/ConfirmationModal';
@@ -49,18 +49,21 @@ interface StudentsViewProps {
 }
 
 const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
-    const { students, courses, addStudent, updateStudent, deleteStudent } = data;
+    const { students, courses, batches, addStudent, updateStudent, deleteStudent } = data;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingStudent, setEditingStudent] = useState<Student | null>(null);
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
 
-    const initialFormState: any = { name: '', email: '', phone: '', courseIds: [], address: '', imageUrl: '', gender: 'Male', status: 'Active' };
+    const initialFormState: any = { name: '', email: '', phone: '', courseIds: [], batchIds: [], admissionDate: new Date().toISOString().split('T')[0], address: '', imageUrl: '', gender: 'Male', status: 'Active' };
     const [formState, setFormState] = useState(initialFormState);
 
     const getCourseNames = (courseIds: string[]) => {
-      
         return courseIds.map(id => courses.find(c => c.id === id)?.name).filter(Boolean).join(', ');
     };
+
+    const getBatchNames = (batchIds: string[] = []) => {
+        return batchIds.map(id => batches.find(b => b.id === id)?.name).filter(Boolean).join(', ');
+    }
     
     const handleOpenModal = (student: Student | null = null) => {
         if (student) {
@@ -87,7 +90,19 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
         const newCourseIds = formState.courseIds.includes(courseId)
             ? formState.courseIds.filter((id:any) => id !== courseId)
             : [...formState.courseIds, courseId];
-        setFormState({ ...formState, courseIds: newCourseIds });
+        
+        // When a course is deselected, also deselect its associated batches
+        const associatedBatchIds = batches.filter(b => b.courseId === courseId).map(b => b.id);
+        const newBatchIds = formState.batchIds?.filter((id:any) => !associatedBatchIds.includes(id)) || [];
+
+        setFormState({ ...formState, courseIds: newCourseIds, batchIds: newBatchIds });
+    };
+
+    const handleBatchChange = (batchId: string) => {
+        const newBatchIds = formState.batchIds?.includes(batchId)
+            ? formState.batchIds.filter((id:any) => id !== batchId)
+            : [...(formState.batchIds || []), batchId];
+        setFormState({ ...formState, batchIds: newBatchIds });
     };
     
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,6 +132,8 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
         }
     };
 
+    const availableBatches = batches.filter(b => formState.courseIds.includes(b.courseId) && b.status !== 'Completed');
+
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -127,7 +144,7 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
                     Add Student
                 </button>
             </div>
-            <Table headers={['Name', 'Courses', 'Join Date', 'Status', 'Actions']}>
+            <Table headers={['Name', 'Courses', 'Batches', 'Status', 'Actions']}>
                 {students.map(student => (
                     <tr key={student.id} className={`align-middle ${student.status === 'Discontinued' ? 'opacity-50' : ''}`}>
                         <td className="p-3">
@@ -142,7 +159,7 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
                            </div>
                         </td>
                         <td className="p-3">{getCourseNames(student.courseIds)}</td>
-                        <td className="p-3">{student.joinDate}</td>
+                        <td className="p-3">{getBatchNames(student.batchIds)}</td>
                         <td className="p-3">
                            <span className={`badge rounded-pill ${
                                 student.status === 'Active' 
@@ -191,6 +208,7 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
                             </FormSelect>
                         </div>
                     </div>
+                    <FormInput label="Admission Date" name="admissionDate" type="date" value={formState.admissionDate} onChange={handleInputChange} required />
                     <FormTextArea label="Address" name="address" value={formState.address} onChange={handleInputChange} />
                      <div className="row">
                         <div className="col-md-6">
@@ -224,6 +242,48 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
                             </div>
                         </div>
                     </div>
+                    {formState.courseIds.length > 0 && (
+                        <div className="mb-3">
+                            <label className="form-label">Batches</label>
+                            <div className="border rounded p-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                {formState.courseIds.map((courseId:any) => {
+                                    const course = courses.find(c => c.id === courseId);
+                                    const courseBatches = availableBatches.filter(b => b.courseId === courseId);
+                                    
+                                    if (!course || courseBatches.length === 0) {
+                                        return null;
+                                    }
+
+                                    return (
+                                        <div key={courseId} className="mb-3">
+                                            <h6 className="fw-semibold small text-body-secondary border-bottom pb-1 mb-2">{course.name}</h6>
+                                            <div className="row">
+                                                {courseBatches.map(batch => (
+                                                    <div key={batch.id} className="col-12 col-md-6">
+                                                        <div className="form-check">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="form-check-input"
+                                                                id={`batch-${batch.id}`}
+                                                                checked={formState.batchIds?.includes(batch.id)}
+                                                                onChange={() => handleBatchChange(batch.id)}
+                                                            />
+                                                            <label className="form-check-label" htmlFor={`batch-${batch.id}`}>
+                                                                {batch.name} <span className="text-muted small">({batch.time})</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {availableBatches.length === 0 && (
+                                    <p className="text-center text-body-secondary m-2">No available batches for the selected course(s).</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     <div className="d-flex justify-content-end pt-3 mt-3 border-top">
                         <button type="button" onClick={handleCloseModal} className="btn btn-secondary me-2">Cancel</button>
                         <button type="submit" className="btn btn-primary">{editingStudent ? "Save Changes" : "Add Student"}</button>

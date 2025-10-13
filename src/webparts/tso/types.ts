@@ -1,5 +1,6 @@
 
 export interface Student {
+  batchIds: any;
   id: string;
   name: string;
   email: string;
@@ -30,6 +31,48 @@ export interface Course {
   level: 'Basic' | 'Advanced';
   duration: string; // e.g., "3 Months"
   totalFee: number;
+}
+export interface Batch {
+  id: string;
+  name: string;
+  courseId: string;
+  staffId: string; // Trainer ID
+  weekdays: ('Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun')[];
+  time: string; // e.g., "08:00 - 10:00"
+  startDate: string;
+  status: 'Upcoming' | 'Ongoing' | 'Completed';
+}
+
+export interface Lead {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    interestedCourseId: string;
+    source: 'Walk-in' | 'Website' | 'Referral' | 'Social Media' | 'Other';
+    status: 'New' | 'Contacted' | 'Follow-up' | 'Converted' | 'Lost';
+    enquiryDate: string;
+    nextFollowUpDate?: string;
+    assignedTo?: string; // staffId
+    comments?: string;
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Trainer' | 'Counsellor' | 'Front Desk' | 'Sales' | 'Other';
+  expertise?: string[]; // Array of course IDs, mainly for trainers
+  imageUrl?: string;
+  phone?: string;
+  address?: string;
+  gender: 'Male' | 'Female' | 'Other';
+  about?: string;
+  status: 'Active' | 'Discontinued';
+  joiningDate: string;
+  employmentType: 'Full-time' | 'Part-time' | 'Contract';
+  salary: number;
+  salaryType: 'Monthly' | 'Hourly';
 }
 
 export interface FeePayment {

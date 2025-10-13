@@ -1,7 +1,34 @@
 import { useEffect, useState } from "react";
-import type { Student, Course } from "../types";
+import type { Student, Course, Staff, Batch, Lead } from "../types";
 import { web } from "../PnpUrl";
 import { Web } from "sp-pnp-js";
+
+const initialStaff: Staff[] = [
+  { id: 'TSO-STF-001', name: 'John Doe', email: 'john.doe@example.com', role: 'Trainer', expertise: ['c1', 'c2'], phone: '555-0101', address: '123 Grammar Lane', imageUrl: `https://i.pravatar.cc/150?u=t1`, gender: 'Male', status: 'Active', about: 'John is a certified ESL instructor with over 10 years of experience helping students gain confidence in their English speaking and listening skills.', joiningDate: '2022-08-01', employmentType: 'Full-time', salary: 50000, salaryType: 'Monthly' },
+  { id: 'TSO-STF-002', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'Trainer', expertise: ['c3', 'c4'], phone: '555-0102', address: '456 Code Street', imageUrl: `https://i.pravatar.cc/150?u=t2`, gender: 'Female', status: 'Active', about: 'A full-stack developer with a passion for teaching, Jane specializes in modern web technologies like React, Node.js, and cloud deployment.', joiningDate: '2021-11-15', employmentType: 'Part-time', salary: 800, salaryType: 'Hourly' },
+  { id: 'TSO-STF-003', name: 'Peter Jones', email: 'peter.jones@example.com', role: 'Counsellor', phone: '555-0103', address: '789 Advice Avenue', imageUrl: `https://i.pravatar.cc/150?u=t3`, gender: 'Male', status: 'Active', about: 'Peter has a background in psychology and helps students choose the right career path and courses.', joiningDate: '2023-01-20', employmentType: 'Full-time', salary: 45000, salaryType: 'Monthly' },
+];
+
+const today = new Date();
+const pastDate = new Date();
+pastDate.setDate(today.getDate() - 15);
+const futureDate = new Date();
+futureDate.setDate(today.getDate() + 15);
+const veryFutureDate = new Date();
+veryFutureDate.setDate(today.getDate() + 45); // For testing upcoming payments > 30 days
+
+const initialBatches: Batch[] = [
+    { id: 'b1', name: 'Morning English (A)', courseId: 'c1', staffId: 'TSO-STF-001', weekdays: ['Mon', 'Wed', 'Fri'], time: '08:00 - 10:00', startDate: '2023-01-15', status: 'Ongoing' },
+    { id: 'b2', name: 'Afternoon Computing (A)', courseId: 'c3', staffId: 'TSO-STF-002', weekdays: ['Tue', 'Thu'], time: '13:00 - 15:00', startDate: '2023-02-20', status: 'Ongoing' },
+    { id: 'b3', name: 'Evening Web Dev (A)', courseId: 'c4', staffId: 'TSO-STF-002', weekdays: ['Mon', 'Wed', 'Fri'], time: '17:00 - 19:00', startDate: '2023-03-01', status: 'Completed' },
+    { id: 'b4', name: 'Advanced English (B)', courseId: 'c2', staffId: 'TSO-STF-001', weekdays: ['Tue', 'Thu', 'Sat'], time: '10:00 - 12:00', startDate: '2024-08-01', status: 'Upcoming' },
+];
+
+const initialLeads: Lead[] = [
+    { id: 'l1', name: 'Potential Pete', email: 'pete@example.com', phone: '987-654-3210', interestedCourseId: 'c4', source: 'Website', status: 'New', enquiryDate: today.toISOString().split('T')[0], nextFollowUpDate: futureDate.toISOString().split('T')[0], assignedTo: 'TSO-STF-003' },
+    { id: 'l2', name: 'Contacted Carla', email: 'carla@example.com', phone: '876-543-2109', interestedCourseId: 'c1', source: 'Walk-in', status: 'Contacted', enquiryDate: pastDate.toISOString().split('T')[0] },
+    { id: 'l3', name: 'Converted Chris', email: 'chris@example.com', phone: '765-432-1098', interestedCourseId: 'c2', source: 'Referral', status: 'Converted', enquiryDate: '2024-05-01' },
+];
 
 export const useMockData = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -10,6 +37,66 @@ export const useMockData = () => {
   const [feePayments, setFeePayments] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [expenses, setExpenseData] = useState<any[]>([]);
+  const [staff, setStaff] = useState<Staff[]>(initialStaff);
+  const [batches, setBatches] = useState<Batch[]>(initialBatches);
+  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+
+    const createId = (prefix: string) => `${prefix}${Date.now()}`;
+    // const getCurrentDate = () => new Date().toISOString().split('T')[0];
+
+    const generateUniqueId = (prefix: string, items: {id: string}[]) => {
+        const fullPrefix = `TSO-${prefix}-`;
+         if (!items.length) {
+            return `${fullPrefix}001`;
+        }
+        const maxIdNum = items
+            .map(s => parseInt(s.id.replace(fullPrefix, ''), 10))
+            .filter(num => !isNaN(num))
+            .reduce((max, current) => Math.max(max, current), 0);
+        
+        const nextIdNum = maxIdNum + 1;
+        return `${fullPrefix}${String(nextIdNum).padStart(3, '0')}`;
+    };
+
+    const addStaff = (data: Omit<Staff, 'id'>) => {
+        const newStaff: Staff = { ...data, id: generateUniqueId('STF', staff) };
+        setStaff(prev => [...prev, newStaff]);
+    };
+     const updateStaff = (updatedStaff: Staff) => {
+        setStaff(prev => prev.map(t => t.id === updatedStaff.id ? updatedStaff : t));
+    };
+    const deleteStaff = (staffId: string) => {
+        setStaff(prev => prev.filter(t => t.id !== staffId));
+    };
+
+        const addLead = (data: Omit<Lead, 'id'>) => {
+        const newLead: Lead = { ...data, id: createId('l') };
+        setLeads(prev => [...prev, newLead]);
+    };
+    const updateLead = (updatedLead: Lead) => {
+        setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+    };
+    const deleteLead = (leadId: string) => {
+        setLeads(prev => prev.filter(l => l.id !== leadId));
+    };
+
+        const addBatch = (data: Omit<Batch, 'id'>) => {
+        const newBatch: Batch = { ...data, id: createId('b') };
+        setBatches(prev => [...prev, newBatch]);
+    };
+    const updateBatch = (updatedBatch: Batch) => {
+        setBatches(prev => prev.map(b => b.id === updatedBatch.id ? updatedBatch : b));
+    };
+    const deleteBatch = (batchId: string) => {
+        setBatches(prev => prev.filter(b => b.id !== batchId));
+        // Also remove this batch from any students
+        // setStudents(prevStudents => prevStudents.map(s => ({
+        //     ...s,
+        //     batchIds: s.batchIds?.filter((id:any) => id !== batchId)
+        // })));
+    };
+
+
 
   // expenses
 
@@ -630,7 +717,7 @@ export const useMockData = () => {
         .expand("courses")
         .getAll();
 
-      const mappedStudents: Student[] = res.map((item) => {
+      const mappedStudents: any = res.map((item) => {
         // Prefer profilePicture.Url if available (Picture/Hyperlink field), otherwise try fileName fallback
         let imageUrl = "";
         if (item.profilePicture && item.profilePicture.Url) {
@@ -901,6 +988,18 @@ export const useMockData = () => {
     expensesData,
     getAssignments,
     expenses,
+        staff,
+     batches,
+    leads,
+ addStaff,
+  updateStaff,
+deleteStaff,
+  addLead,
+updateLead,
+  deleteLead,
+   addBatch,
+        updateBatch,
+        deleteBatch,
     addExpense,
     updateExpense,
     deleteExpense,
