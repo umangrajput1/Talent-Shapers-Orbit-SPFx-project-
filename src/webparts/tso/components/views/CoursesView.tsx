@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useMockData } from '../../hooks/useMockData';
 import type { Course } from '../../types';
 import Modal from '../common/Modal';
