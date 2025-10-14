@@ -837,7 +837,7 @@ export const useMockData = () => {
       console.error("Error deleting trainer:", err);
     }
   };
-  /// gajendra
+  /// gajendra  data
 
   const sanitizeUrl = (url?: string) => {
     if (!url) return "";
