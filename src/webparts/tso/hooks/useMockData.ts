@@ -864,7 +864,7 @@ export const useMockData = () => {
     return new File([blob], fileName, { type: blob.type });
   };
 
-  const fetchAPIData = async (): Promise<void> => {
+  const fetchCourses = async (): Promise<void> => {
     try {
       const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
       const res = await web.lists
@@ -884,119 +884,89 @@ export const useMockData = () => {
     }
   };
 
-  const fetchAPIStudent = async (): Promise<Student[]> => {
+    const fetchAPIStudent = async (): Promise<Student[]> => {
     try {
-      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-
+      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+ 
       const res = await web.lists
-        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
-        .items.select(
-          "Id",
-          "Title",
-          "emailAddress",
-          "phoneNumber",
-          "gender",
-          "address",
-          "status",
-          "profilePicture",
-          "joinDate",
-          "courses/Id",
-          "courses/Title"
+        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+        .items
+        .select(
+          'Id',
+          'Title',
+          'emailAddress',
+          'phoneNumber',
+          'gender',
+          'address',
+          'status',
+          'joinDate',
+          'courses/Id',
+          'courses/Title'
         )
-        .expand("courses")
+        .expand('courses')
         .getAll();
-
-      const mappedStudents: any = res.map((item) => {
-        // Prefer profilePicture.Url if available (Picture/Hyperlink field), otherwise try fileName fallback
-        let imageUrl = "";
-        if (item.profilePicture && item.profilePicture.Url) {
-          imageUrl = sanitizeUrl(item.profilePicture.Url);
-        } else if (item.profilePicture && item.profilePicture.fileName) {
-          // Fallback to the thumbnails path if your library creates thumbnails this way
-          imageUrl = `https://smalsusinfolabs.sharepoint.com/sites/TSO/Pictures/Forms/Thumbnails/StudentImage/${item.profilePicture.fileName}`;
-        } else {
-          // Default placeholder
-          imageUrl = `https://i.pravatar.cc/150?u=student${item.Id}`;
-        }
-
-        return {
-          id: String(item.Id),
-          name: item.Title || "",
-          email: item.emailAddress || "",
-          phone: String(item.phoneNumber || ""),
-          gender: item.gender || "",
-          address: item.address || "",
-          status: item.status || "Active",
-          joinDate: item.joinDate
-            ? new Date(item.joinDate).toISOString().split("T")[0]
-            : "",
-          imageUrl, // Use constructed/sanitized URL
-          courseIds: item.courses
-            ? item.courses.map((c: { Id: number }) => String(c.Id))
-            : [],
-          courseNames: item.courses
-            ? item.courses.map((c: { Title: string }) => c.Title)
-            : [],
-        };
-      });
-
+ 
+      console.log("Raw SharePoint response:", res);
+ 
+      // 🧠 map function ko async banaya hai
+      const mappedStudents: any = await Promise.all(
+        res.map(async (item) => {
+          let imageUrl = "";
+          try {
+            // Fetch attachment files for this item
+            const attachments = await web.lists
+              .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+              .items.getById(item.Id)
+              .attachmentFiles.get();
+ 
+            if (attachments && attachments.length > 0) {
+              imageUrl = sanitizeUrl(attachments[0].ServerRelativeUrl || attachments[0].ServerRelativePath || '');
+            } else {
+              imageUrl = `https://i.pravatar.cc/150?u=student${item.Id}`;
+            }
+          } catch (err) {
+            console.warn("Could not fetch attachments for item", item.Id, err);
+            imageUrl = `https://i.pravatar.cc/150?u=student${item.Id}`;
+          }
+ 
+          return {
+            id: String(item.Id),
+            name: item.Title || "",
+            email: item.emailAddress || "",
+            phone: String(item.phoneNumber || ""),
+            gender: item.gender || "",
+            address: item.address || "",
+            status: item.status || "Active",
+            joinDate: item.joinDate ? new Date(item.joinDate).toISOString().split("T")[0] : "",
+            imageUrl,
+            courseIds: item.courses ? item.courses.map((c: { Id: number }) => String(c.Id)) : [],
+            courseNames: item.courses ? item.courses.map((c: { Title: string }) => c.Title) : []
+          };
+        })
+      );
+ 
+      console.log("Mapped students with images:", mappedStudents);
+ 
       setStudents(mappedStudents);
+      console.log("Students fetched successfully:", mappedStudents.length, "students");
+ 
       return mappedStudents;
+ 
     } catch (error) {
       console.error("fetchStudents error ::", error);
       return [];
     }
   };
-
-  // Upload helper for student images
-  const uploadStudentImage = async (file: File) => {
-    const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-    const folder = web.getFolderByServerRelativeUrl(
-      "/sites/TSO/Pictures/StudentImage"
-    );
-    const uploadedFile = await folder.files.add(file.name, file, true);
-    return uploadedFile.data.ServerRelativeUrl; // ServerRelativeUrl
-  };
-
+ 
   useEffect(() => {
-    fetchAPIData().catch(console.error);
+    fetchCourses().catch(console.error);
     fetchAPIStudent().catch(console.error);
   }, []);
-
-  const addStudent = async (
-    data: Omit<Student, "id">
-  ): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
+ 
+  const addStudent = async (data: Omit<Student, 'id'> & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
     try {
-      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-
-      // Prepare profilePicture field — handle File or base64 data URL or already relative URL
-      let profileField: any = null;
-
-      if ((data as any).imageFile) {
-        // If caller provided a File object (recommended)
-        const serverRel = await uploadStudentImage(
-          (data as any).imageFile as File
-        );
-        profileField = { Url: serverRel, Description: "Profile Picture" };
-      } else if (data.imageUrl && data.imageUrl.startsWith("data:")) {
-        // If caller provided base64/data URL string
-        const blob = dataUrlToBlob(data.imageUrl);
-        const fileName = `student_${Date.now()}.png`;
-        const file = blobToFile(blob, fileName);
-        const serverRel = await uploadStudentImage(file);
-        profileField = { Url: serverRel, Description: "Profile Picture" };
-      } else if (
-        data.imageUrl &&
-        (data.imageUrl.startsWith("/") ||
-          data.imageUrl.startsWith(window.location.origin))
-      ) {
-        // If imageUrl is already a server relative OR full URL, convert to relative for SharePoint field
-        const rel = data.imageUrl.startsWith(window.location.origin)
-          ? data.imageUrl.replace(window.location.origin, "")
-          : data.imageUrl;
-        profileField = { Url: rel, Description: "Profile Picture" };
-      }
-
+      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+ 
       const studentData: any = {
         Title: data.name,
         emailAddress: data.email,
@@ -1005,59 +975,51 @@ export const useMockData = () => {
         address: data.address,
         status: data.status || "Active",
         joinDate: data.joinDate || new Date().toISOString().split("T")[0],
-        coursesId: { results: data.courseIds?.map((id) => Number(id)) || [] },
+        coursesId: { results: data.courseIds?.map(id => Number(id)) || [] },
+        // do NOT set profilePicture field - we will use attachment
       };
-
-      if (profileField) {
-        studentData.profilePicture = profileField; // Picture/Hyperlink field value
-      }
-
+ 
+      // 1) Create item first
       const result = await web.lists
-        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
+        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items.add(studentData);
-
+ 
+      const newItemId = result.data.Id;
+ 
+      // 2) If caller provided a File object, upload as attachment to created item
+      if ((data as any).imageFile) {
+        const file: File = (data as any).imageFile as File;
+        await web.lists
+          .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+          .items
+          .getById(newItemId)
+          .attachmentFiles.add(file.name, file);
+      } else if (data.imageUrl && data.imageUrl.startsWith('data:')) {
+        // optional: handle base64 by converting to File then attach
+        const blob = dataUrlToBlob(data.imageUrl);
+        const fileName = `student_${Date.now()}.png`;
+        const file = blobToFile(blob, fileName);
+        await web.lists
+          .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+          .items
+          .getById(newItemId)
+          .attachmentFiles.add(file.name, file);
+      }
+ 
+      // Refresh local data
       await fetchAPIStudent();
-
+ 
       return { success: true, data: result };
     } catch (error) {
-      console.error("addStudent error ::", error);
+      console.error("addStudent (attachments) error ::", error);
       return { success: false, error: error };
     }
   };
-
-  const updateStudent = async (
-    updatedStudent: Student
-  ): Promise<{ success: boolean; error?: unknown }> => {
+ 
+  const updateStudent = async (updatedStudent: Student & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; error?: unknown }> => {
     try {
-      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-
-      // Prepare profilePicture update logic
-      let profileFieldUpdate: any = null;
-
-      if ((updatedStudent as any).imageFile) {
-        // If a new File object is provided
-        const serverRel = await uploadStudentImage(
-          (updatedStudent as any).imageFile as File
-        );
-        profileFieldUpdate = { Url: serverRel, Description: "Profile Picture" };
-      } else if (
-        updatedStudent.imageUrl &&
-        updatedStudent.imageUrl.startsWith("data:")
-      ) {
-        // If imageUrl is base64 data, upload it
-        const blob = dataUrlToBlob(updatedStudent.imageUrl);
-        const fileName = `student_${Date.now()}.png`;
-        const file = blobToFile(blob, fileName);
-        const serverRel = await uploadStudentImage(file);
-        profileFieldUpdate = { Url: serverRel, Description: "Profile Picture" };
-      } else if (updatedStudent.imageUrl) {
-        // If imageUrl is full URL or relative path, convert to relative path for SharePoint
-        const rel = updatedStudent.imageUrl.startsWith(window.location.origin)
-          ? updatedStudent.imageUrl.replace(window.location.origin, "")
-          : updatedStudent.imageUrl;
-        profileFieldUpdate = { Url: rel, Description: "Profile Picture" };
-      }
-
+      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+ 
       const updateData: any = {
         Title: updatedStudent.name,
         emailAddress: updatedStudent.email,
@@ -1066,42 +1028,67 @@ export const useMockData = () => {
         address: updatedStudent.address,
         status: updatedStudent.status,
         joinDate: updatedStudent.joinDate,
-        coursesId: {
-          results: updatedStudent.courseIds?.map((id) => Number(id)) || [],
-        },
+        coursesId: { results: updatedStudent.courseIds?.map(id => Number(id)) || [] }
       };
-
-      if (profileFieldUpdate) {
-        updateData.profilePicture = profileFieldUpdate;
-      }
-
+ 
+      // 1) Update list item fields (no attachment yet)
       await web.lists
-        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
+        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items.getById(Number(updatedStudent.id))
         .update(updateData);
-
+ 
+      // 2) If new file provided, remove old attachments and add new one
+      if ((updatedStudent as any).imageFile) {
+        const item = web.lists.getById('25a7c502-9910-498e-898b-a0b37888a15e').items.getById(Number(updatedStudent.id));
+        // Delete existing attachments (optional, to keep single profile image)
+        try {
+          const existing = await item.attachmentFiles.get();
+          for (const a of existing) {
+            // delete by name
+            await web.lists
+              .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+              .items
+              .getById(Number(updatedStudent.id))
+              .attachmentFiles.getByName(a.FileName)
+              .delete();
+          }
+        } catch (err) {
+          console.warn("Could not delete existing attachments", err);
+        }
+ 
+        // Add new
+        const file: File = (updatedStudent as any).imageFile as File;
+        await web.lists
+          .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+          .items
+          .getById(Number(updatedStudent.id))
+          .attachmentFiles.add(file.name, file);
+      }
+ 
+      // Refresh local data after update
       await fetchAPIStudent();
-
+ 
       return { success: true };
     } catch (error) {
-      console.error("updateStudent error ::", error);
+      console.error("updateStudent (attachments) error ::", error);
       return { success: false, error: error };
     }
   };
-
-  const deleteStudent = async (
-    studentId: string
-  ): Promise<{ success: boolean; error?: unknown }> => {
+ 
+ 
+  const deleteStudent = async (studentId: string): Promise<{ success: boolean; error?: unknown }> => {
     try {
-      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-
+      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+ 
       await web.lists
-        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
+        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items.getById(Number(studentId))
         .delete();
-
+ 
+      console.log("Student deleted successfully!");
+ 
       await fetchAPIStudent();
-
+ 
       return { success: true };
     } catch (error) {
       console.error("deleteStudent error ::", error);
