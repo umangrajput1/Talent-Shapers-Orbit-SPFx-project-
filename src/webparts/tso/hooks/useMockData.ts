@@ -17,48 +17,48 @@ futureDate.setDate(today.getDate() + 15);
 const veryFutureDate = new Date();
 veryFutureDate.setDate(today.getDate() + 45); // For testing upcoming payments > 30 days
 
-const initialBatches: Batch[] = [
-  {
-    id: "b1",
-    name: "Morning English (A)",
-    courseId: "c1",
-    staffId: "TSO-STF-001",
-    weekdays: ["Mon", "Wed", "Fri"],
-    time: "08:00 - 10:00",
-    startDate: "2023-01-15",
-    status: "Ongoing",
-  },
-  {
-    id: "b2",
-    name: "Afternoon Computing (A)",
-    courseId: "c3",
-    staffId: "TSO-STF-002",
-    weekdays: ["Tue", "Thu"],
-    time: "13:00 - 15:00",
-    startDate: "2023-02-20",
-    status: "Ongoing",
-  },
-  {
-    id: "b3",
-    name: "Evening Web Dev (A)",
-    courseId: "c4",
-    staffId: "TSO-STF-002",
-    weekdays: ["Mon", "Wed", "Fri"],
-    time: "17:00 - 19:00",
-    startDate: "2023-03-01",
-    status: "Completed",
-  },
-  {
-    id: "b4",
-    name: "Advanced English (B)",
-    courseId: "c2",
-    staffId: "TSO-STF-001",
-    weekdays: ["Tue", "Thu", "Sat"],
-    time: "10:00 - 12:00",
-    startDate: "2024-08-01",
-    status: "Upcoming",
-  },
-];
+// const initialBatches: Batch[] = [
+//   {
+//     id: "b1",
+//     name: "Morning English (A)",
+//     courseId: "c1",
+//     staffId: "TSO-STF-001",
+//     weekdays: ["Mon", "Wed", "Fri"],
+//     time: "08:00 - 10:00",
+//     startDate: "2023-01-15",
+//     status: "Ongoing",
+//   },
+//   {
+//     id: "b2",
+//     name: "Afternoon Computing (A)",
+//     courseId: "c3",
+//     staffId: "TSO-STF-002",
+//     weekdays: ["Tue", "Thu"],
+//     time: "13:00 - 15:00",
+//     startDate: "2023-02-20",
+//     status: "Ongoing",
+//   },
+//   {
+//     id: "b3",
+//     name: "Evening Web Dev (A)",
+//     courseId: "c4",
+//     staffId: "TSO-STF-002",
+//     weekdays: ["Mon", "Wed", "Fri"],
+//     time: "17:00 - 19:00",
+//     startDate: "2023-03-01",
+//     status: "Completed",
+//   },
+//   {
+//     id: "b4",
+//     name: "Advanced English (B)",
+//     courseId: "c2",
+//     staffId: "TSO-STF-001",
+//     weekdays: ["Tue", "Thu", "Sat"],
+//     time: "10:00 - 12:00",
+//     startDate: "2024-08-01",
+//     status: "Upcoming",
+//   },
+// ];
 
 const initialLeads: Lead[] = [
   {
@@ -103,7 +103,7 @@ export const useMockData = () => {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [expenses, setExpenseData] = useState<any[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [batches, setBatches] = useState<Batch[]>(initialBatches);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
 
   const createId = (prefix: string) => `${prefix}${Date.now()}`;
@@ -149,6 +149,93 @@ export const useMockData = () => {
       .attachmentFiles.add(file.name, buffer);
     return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
   };
+
+  // Batches model 
+
+  const batcheListId = "3d055690-e98b-4ebf-899f-7b4ab3b09816"
+  const fetchBatches = async (): Promise<any> => {
+    try {
+      const res = await web.lists.getById(batcheListId).items
+      .select("Id,name,courseId/Id,courseId/Title,staffId/Id,staffId/Title,weekdays,time,startDate,status")
+      .expand("courseId,staffId")
+      .get();
+
+      const mappedBatches = res.map((item: any) => ({
+        id: item.Id.toString(),
+        name: item.name,
+        courseId: item.courseId ? item.courseId.Id.toString() : "",
+        staffId: item.staffId ? item.staffId.Id.toString() : "",
+        weekdays: item.weekdays,
+        time: item.time,
+        startDate: item.startDate.substring(0, 10),
+        status: item.status,
+      }));
+      setBatches(mappedBatches);
+    } catch (error) {
+      console.error("Error fetching batches:", error);
+    }
+  };
+  useEffect(() => {
+    fetchBatches();
+  }, []);
+
+  const addBatch = async (data: Omit<Batch, "id">): Promise<void> => {
+  console.log("Adding batch:", data);
+  try {
+    await web.lists.getById(batcheListId).items.add({
+      Title: data.name, 
+      name: data.name, 
+      courseIdId: parseInt(data.courseId), 
+      staffIdId: parseInt(data.staffId),  
+      weekdays: data.weekdays ? { results: data.weekdays } : { results: [] },
+      time: data.time,
+      startDate: data.startDate,
+      status: data.status,
+    });
+  } catch (error) {
+    console.error("Error adding batch:", error);
+  }
+  await fetchBatches();
+};
+
+  const updateBatch = async(updatedBatch: Batch):Promise<any> => {
+    console.log("Updating batch:", updatedBatch);
+    try {
+      await web.lists.getById(batcheListId).items.getById(parseInt(updatedBatch.id)).update({
+        Title: updatedBatch.name,
+        name: updatedBatch.name,
+        courseIdId: parseInt(updatedBatch.courseId),
+        staffIdId: parseInt(updatedBatch.staffId),
+        weekdays: updatedBatch.weekdays ? { results: updatedBatch.weekdays } : { results: [] },
+        time: updatedBatch.time,
+        startDate: updatedBatch.startDate,
+        status: updatedBatch.status,
+      });
+    } catch (error) {
+      console.error("Error updating batch:", error);
+    }
+    await fetchBatches();
+    // setBatches((prev) =>
+    //   prev.map((b) => (b.id === updatedBatch.id ? updatedBatch : b))
+    // );
+  };
+  const deleteBatch = async(batchId: string) :Promise <any>=> {
+    console.log("Deleting batch:", batchId);
+    try {
+      await web.lists.getById(batcheListId).items.getById(parseInt(batchId)).delete();
+    } catch (error) {
+      console.error("Error deleting batch:", error);  
+    }
+    await fetchBatches();
+    // setBatches((prev) => prev.filter((b) => b.id !== batchId));
+    // Also remove this batch from any students
+    // setStudents(prevStudents => prevStudents.map(s => ({
+    //     ...s,
+    //     batchIds: s.batchIds?.filter((id:any) => id !== batchId)
+    // })));
+  };
+
+
 
   // fetch staff added
   const fetchStaff = async (): Promise<any> => {
@@ -295,23 +382,6 @@ export const useMockData = () => {
     setLeads((prev) => prev.filter((l) => l.id !== leadId));
   };
 
-  const addBatch = (data: Omit<Batch, "id">) => {
-    const newBatch: Batch = { ...data, id: createId("b") };
-    setBatches((prev) => [...prev, newBatch]);
-  };
-  const updateBatch = (updatedBatch: Batch) => {
-    setBatches((prev) =>
-      prev.map((b) => (b.id === updatedBatch.id ? updatedBatch : b))
-    );
-  };
-  const deleteBatch = (batchId: string) => {
-    setBatches((prev) => prev.filter((b) => b.id !== batchId));
-    // Also remove this batch from any students
-    // setStudents(prevStudents => prevStudents.map(s => ({
-    //     ...s,
-    //     batchIds: s.batchIds?.filter((id:any) => id !== batchId)
-    // })));
-  };
 
   // expenses
 
@@ -905,9 +975,6 @@ export const useMockData = () => {
         )
         .expand('courses')
         .getAll();
- 
-      console.log("Raw SharePoint response:", res);
- 
       // 🧠 map function ko async banaya hai
       const mappedStudents: any = await Promise.all(
         res.map(async (item) => {
@@ -945,12 +1012,8 @@ export const useMockData = () => {
         })
       );
  
-      console.log("Mapped students with images:", mappedStudents);
- 
       setStudents(mappedStudents);
-      console.log("Students fetched successfully:", mappedStudents.length, "students");
- 
-      return mappedStudents;
+       return mappedStudents;
  
     } catch (error) {
       console.error("fetchStudents error ::", error);
