@@ -707,7 +707,7 @@ export const useMockData = () => {
 
       console.log("Raw SharePoint response:", res);
 
-      // 🧠 map function ko async banaya hai
+      // 🧠 map function ko async banaya hai is done
       const mappedStudents: Student[] = await Promise.all(
         res.map(async (item) => {
           let imageUrl = "";
