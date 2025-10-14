@@ -142,7 +142,7 @@ export const useMockData = () => {
         .delete();
     }
 
-    // Add new attachment
+    // Add new attachment with the provided file name
     const buffer = await file.arrayBuffer();
     const uploaded = await list.items
       .getById(itemId)
