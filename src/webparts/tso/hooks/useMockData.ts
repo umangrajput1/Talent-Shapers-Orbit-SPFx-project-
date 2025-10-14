@@ -150,7 +150,7 @@ export const useMockData = () => {
     return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
   };
 
-  // fetch staff
+  // fetch staff added
   const fetchStaff = async (): Promise<any> => {
     try {
       const res = await web.lists
