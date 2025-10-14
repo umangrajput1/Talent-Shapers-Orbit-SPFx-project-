@@ -3,11 +3,11 @@ import type { Student, Course, Staff, Batch, Lead } from "../types";
 import { web } from "../PnpUrl";
 import { Web } from "sp-pnp-js";
 
-const initialStaff: Staff[] = [
-  { id: 'TSO-STF-001', name: 'John Doe', email: 'john.doe@example.com', role: 'Trainer', expertise: ['c1', 'c2'], phone: '555-0101', address: '123 Grammar Lane', imageUrl: `https://i.pravatar.cc/150?u=t1`, gender: 'Male', status: 'Active', about: 'John is a certified ESL instructor with over 10 years of experience helping students gain confidence in their English speaking and listening skills.', joiningDate: '2022-08-01', employmentType: 'Full-time', salary: 50000, salaryType: 'Monthly' },
-  { id: 'TSO-STF-002', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'Trainer', expertise: ['c3', 'c4'], phone: '555-0102', address: '456 Code Street', imageUrl: `https://i.pravatar.cc/150?u=t2`, gender: 'Female', status: 'Active', about: 'A full-stack developer with a passion for teaching, Jane specializes in modern web technologies like React, Node.js, and cloud deployment.', joiningDate: '2021-11-15', employmentType: 'Part-time', salary: 800, salaryType: 'Hourly' },
-  { id: 'TSO-STF-003', name: 'Peter Jones', email: 'peter.jones@example.com', role: 'Counsellor', phone: '555-0103', address: '789 Advice Avenue', imageUrl: `https://i.pravatar.cc/150?u=t3`, gender: 'Male', status: 'Active', about: 'Peter has a background in psychology and helps students choose the right career path and courses.', joiningDate: '2023-01-20', employmentType: 'Full-time', salary: 45000, salaryType: 'Monthly' },
-];
+// const initialStaff: Staff[] = [
+//   { id: 'TSO-STF-001', name: 'John Doe', email: 'john.doe@example.com', role: 'Trainer', expertise: ['c1', 'c2'], phone: '555-0101', address: '123 Grammar Lane', imageUrl: `https://i.pravatar.cc/150?u=t1`, gender: 'Male', status: 'Active', about: 'John is a certified ESL instructor with over 10 years of experience helping students gain confidence in their English speaking and listening skills.', joiningDate: '2022-08-01', employmentType: 'Full-time', salary: 50000, salaryType: 'Monthly' },
+//   { id: 'TSO-STF-002', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'Trainer', expertise: ['c3', 'c4'], phone: '555-0102', address: '456 Code Street', imageUrl: `https://i.pravatar.cc/150?u=t2`, gender: 'Female', status: 'Active', about: 'A full-stack developer with a passion for teaching, Jane specializes in modern web technologies like React, Node.js, and cloud deployment.', joiningDate: '2021-11-15', employmentType: 'Part-time', salary: 800, salaryType: 'Hourly' },
+//   { id: 'TSO-STF-003', name: 'Peter Jones', email: 'peter.jones@example.com', role: 'Counsellor', phone: '555-0103', address: '789 Advice Avenue', imageUrl: `https://i.pravatar.cc/150?u=t3`, gender: 'Male', status: 'Active', about: 'Peter has a background in psychology and helps students choose the right career path and courses.', joiningDate: '2023-01-20', employmentType: 'Full-time', salary: 45000, salaryType: 'Monthly' },
+// ];
 
 const today = new Date();
 const pastDate = new Date();
@@ -18,16 +18,81 @@ const veryFutureDate = new Date();
 veryFutureDate.setDate(today.getDate() + 45); // For testing upcoming payments > 30 days
 
 const initialBatches: Batch[] = [
-    { id: 'b1', name: 'Morning English (A)', courseId: 'c1', staffId: 'TSO-STF-001', weekdays: ['Mon', 'Wed', 'Fri'], time: '08:00 - 10:00', startDate: '2023-01-15', status: 'Ongoing' },
-    { id: 'b2', name: 'Afternoon Computing (A)', courseId: 'c3', staffId: 'TSO-STF-002', weekdays: ['Tue', 'Thu'], time: '13:00 - 15:00', startDate: '2023-02-20', status: 'Ongoing' },
-    { id: 'b3', name: 'Evening Web Dev (A)', courseId: 'c4', staffId: 'TSO-STF-002', weekdays: ['Mon', 'Wed', 'Fri'], time: '17:00 - 19:00', startDate: '2023-03-01', status: 'Completed' },
-    { id: 'b4', name: 'Advanced English (B)', courseId: 'c2', staffId: 'TSO-STF-001', weekdays: ['Tue', 'Thu', 'Sat'], time: '10:00 - 12:00', startDate: '2024-08-01', status: 'Upcoming' },
+  {
+    id: "b1",
+    name: "Morning English (A)",
+    courseId: "c1",
+    staffId: "TSO-STF-001",
+    weekdays: ["Mon", "Wed", "Fri"],
+    time: "08:00 - 10:00",
+    startDate: "2023-01-15",
+    status: "Ongoing",
+  },
+  {
+    id: "b2",
+    name: "Afternoon Computing (A)",
+    courseId: "c3",
+    staffId: "TSO-STF-002",
+    weekdays: ["Tue", "Thu"],
+    time: "13:00 - 15:00",
+    startDate: "2023-02-20",
+    status: "Ongoing",
+  },
+  {
+    id: "b3",
+    name: "Evening Web Dev (A)",
+    courseId: "c4",
+    staffId: "TSO-STF-002",
+    weekdays: ["Mon", "Wed", "Fri"],
+    time: "17:00 - 19:00",
+    startDate: "2023-03-01",
+    status: "Completed",
+  },
+  {
+    id: "b4",
+    name: "Advanced English (B)",
+    courseId: "c2",
+    staffId: "TSO-STF-001",
+    weekdays: ["Tue", "Thu", "Sat"],
+    time: "10:00 - 12:00",
+    startDate: "2024-08-01",
+    status: "Upcoming",
+  },
 ];
 
 const initialLeads: Lead[] = [
-    { id: 'l1', name: 'Potential Pete', email: 'pete@example.com', phone: '987-654-3210', interestedCourseId: 'c4', source: 'Website', status: 'New', enquiryDate: today.toISOString().split('T')[0], nextFollowUpDate: futureDate.toISOString().split('T')[0], assignedTo: 'TSO-STF-003' },
-    { id: 'l2', name: 'Contacted Carla', email: 'carla@example.com', phone: '876-543-2109', interestedCourseId: 'c1', source: 'Walk-in', status: 'Contacted', enquiryDate: pastDate.toISOString().split('T')[0] },
-    { id: 'l3', name: 'Converted Chris', email: 'chris@example.com', phone: '765-432-1098', interestedCourseId: 'c2', source: 'Referral', status: 'Converted', enquiryDate: '2024-05-01' },
+  {
+    id: "l1",
+    name: "Potential Pete",
+    email: "pete@example.com",
+    phone: "987-654-3210",
+    interestedCourseId: "c4",
+    source: "Website",
+    status: "New",
+    enquiryDate: today.toISOString().split("T")[0],
+    nextFollowUpDate: futureDate.toISOString().split("T")[0],
+    assignedTo: "TSO-STF-003",
+  },
+  {
+    id: "l2",
+    name: "Contacted Carla",
+    email: "carla@example.com",
+    phone: "876-543-2109",
+    interestedCourseId: "c1",
+    source: "Walk-in",
+    status: "Contacted",
+    enquiryDate: pastDate.toISOString().split("T")[0],
+  },
+  {
+    id: "l3",
+    name: "Converted Chris",
+    email: "chris@example.com",
+    phone: "765-432-1098",
+    interestedCourseId: "c2",
+    source: "Referral",
+    status: "Converted",
+    enquiryDate: "2024-05-01",
+  },
 ];
 
 export const useMockData = () => {
@@ -37,66 +102,216 @@ export const useMockData = () => {
   const [feePayments, setFeePayments] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [expenses, setExpenseData] = useState<any[]>([]);
-  const [staff, setStaff] = useState<Staff[]>(initialStaff);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [batches, setBatches] = useState<Batch[]>(initialBatches);
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
 
-    const createId = (prefix: string) => `${prefix}${Date.now()}`;
-    // const getCurrentDate = () => new Date().toISOString().split('T')[0];
+  const createId = (prefix: string) => `${prefix}${Date.now()}`;
+  // const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
-    const generateUniqueId = (prefix: string, items: {id: string}[]) => {
-        const fullPrefix = `TSO-${prefix}-`;
-         if (!items.length) {
-            return `${fullPrefix}001`;
-        }
-        const maxIdNum = items
-            .map(s => parseInt(s.id.replace(fullPrefix, ''), 10))
-            .filter(num => !isNaN(num))
-            .reduce((max, current) => Math.max(max, current), 0);
-        
-        const nextIdNum = maxIdNum + 1;
-        return `${fullPrefix}${String(nextIdNum).padStart(3, '0')}`;
-    };
+  const generateUniqueId = (prefix: string, items: { id: string }[]) => {
+    const fullPrefix = `TSO-${prefix}-`;
+    if (!items.length) {
+      return `${fullPrefix}001`;
+    }
+    const maxIdNum = items
+      .map((s) => parseInt(s.id.replace(fullPrefix, ""), 10))
+      .filter((num) => !isNaN(num))
+      .reduce((max, current) => Math.max(max, current), 0);
 
-    const addStaff = (data: Omit<Staff, 'id'>) => {
-        const newStaff: Staff = { ...data, id: generateUniqueId('STF', staff) };
-        setStaff(prev => [...prev, newStaff]);
-    };
-     const updateStaff = (updatedStaff: Staff) => {
-        setStaff(prev => prev.map(t => t.id === updatedStaff.id ? updatedStaff : t));
-    };
-    const deleteStaff = (staffId: string) => {
-        setStaff(prev => prev.filter(t => t.id !== staffId));
-    };
+    const nextIdNum = maxIdNum + 1;
+    return `${fullPrefix}${String(nextIdNum).padStart(3, "0")}`;
+  };
 
-        const addLead = (data: Omit<Lead, 'id'>) => {
-        const newLead: Lead = { ...data, id: createId('l') };
-        setLeads(prev => [...prev, newLead]);
-    };
-    const updateLead = (updatedLead: Lead) => {
-        setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
-    };
-    const deleteLead = (leadId: string) => {
-        setLeads(prev => prev.filter(l => l.id !== leadId));
-    };
+  //upload
+  const uploadAttachment = async (
+    listId: string,
+    file: File,
+    itemId: number
+  ) => {
+    const list = web.lists.getById(listId);
 
-        const addBatch = (data: Omit<Batch, 'id'>) => {
-        const newBatch: Batch = { ...data, id: createId('b') };
-        setBatches(prev => [...prev, newBatch]);
-    };
-    const updateBatch = (updatedBatch: Batch) => {
-        setBatches(prev => prev.map(b => b.id === updatedBatch.id ? updatedBatch : b));
-    };
-    const deleteBatch = (batchId: string) => {
-        setBatches(prev => prev.filter(b => b.id !== batchId));
-        // Also remove this batch from any students
-        // setStudents(prevStudents => prevStudents.map(s => ({
-        //     ...s,
-        //     batchIds: s.batchIds?.filter((id:any) => id !== batchId)
-        // })));
-    };
+    // Delete old attachments first (to overwrite)
+    const existingAttachments = await list.items
+      .getById(itemId)
+      .attachmentFiles.get();
+    for (const f of existingAttachments) {
+      await list.items
+        .getById(itemId)
+        .attachmentFiles.getByName(f.FileName)
+        .delete();
+    }
 
+    // Add new attachment
+    const buffer = await file.arrayBuffer();
+    const uploaded = await list.items
+      .getById(itemId)
+      .attachmentFiles.add(file.name, buffer);
+    return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
+  };
 
+  // fetch staff
+  const fetchStaff = async (): Promise<any> => {
+    try {
+      const res = await web.lists
+        .getById("5ec85e68-1f9d-4416-8547-307a432dd9ef")
+        .items.select(
+          "Id,Title,name,email,role,expertise/Id,expertise/Title,phone,address,gender,status,about,joiningDate,employmentType,salary,salaryType,Attachments,AttachmentFiles"
+        )
+        .expand("expertise,AttachmentFiles")
+        .get();
+
+      const mappedStaff: Staff[] = res.map((item: any) => {
+        const attachments =
+          item.AttachmentFiles && item.AttachmentFiles.length > 0
+            ? item.AttachmentFiles.map((att: any) => ({
+                fileName: att.FileName,
+                serverRelativeUrl: att.ServerRelativeUrl,
+                url: `${window.location.origin}${att.ServerRelativeUrl}`,
+              }))
+            : [];
+
+        const imageUrl =
+          attachments.length > 0
+            ? attachments[0].url
+            : `https://i.pravatar.cc/150?u=staff${item.Id}`;
+
+        return {
+          id: item.Id.toString(),
+          title: item.Title,
+          name: item.name,
+          email: item.email,
+          role: item.role,
+          expertise: item.expertise
+            ? item.expertise.map((ex: any) => ex.Id.toString())
+            : [],
+          phone: item.phone,
+          address: item.address,
+          gender: item.gender,
+          status: item.status,  
+          about: item.about,
+          joiningDate: item.joiningDate.substring(0, 10),
+          employmentType: item.employmentType,
+          salary: item.salary,
+          salaryType: item.salaryType,
+          imageUrl,
+          attachments,
+        };
+      });
+      setStaff(mappedStaff);
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+    }
+  };
+
+  const addStaff = async (data: Omit<Staff, "id">): Promise<any> => {
+    try {
+      const listId = "5ec85e68-1f9d-4416-8547-307a432dd9ef";
+      const res = await web.lists.getById(listId).items.add({
+        Title: data.name,
+        staffId: generateUniqueId("STF", staff),
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        expertiseId: Array.isArray(data.expertise)
+          ? { results: data.expertise.map(Number) }
+          : { results: [] },
+        phone: data.phone,
+        address: data.address,
+        gender: data.gender,
+        status: data.status,
+        about: data.about,
+        joiningDate: data.joiningDate,
+        employmentType: data.employmentType,
+        salary: Number(data.salary) || 0,
+        salaryType: data.salaryType,
+      });
+
+      const file: File | undefined = (data as any).imageFile;
+      if (file) {
+        await uploadAttachment(listId, file, res.data.Id);
+      }
+
+      console.log("Staff added:", res);
+      await fetchStaff();
+    } catch (error) {
+      console.error("Error adding staff:", error);
+    }
+  };
+
+  const updateStaff = async (updatedStaff: Staff): Promise<any> => {
+    const listId = "5ec85e68-1f9d-4416-8547-307a432dd9ef";
+    const mappedStaff = {
+      Title: updatedStaff.name,
+      name: updatedStaff.name,
+      email: updatedStaff.email,
+      role: updatedStaff.role,
+      expertiseId: Array.isArray(updatedStaff.expertise)
+        ? { results: updatedStaff.expertise.map(Number) }
+        : { results: [] },
+      phone: updatedStaff.phone,
+      address: updatedStaff.address,
+      gender: updatedStaff.gender,
+      status: updatedStaff.status,
+      about: updatedStaff.about,
+      joiningDate: updatedStaff.joiningDate,
+      employmentType: updatedStaff.employmentType,
+      salary: Number(updatedStaff.salary) || 0,
+      salaryType: updatedStaff.salaryType,
+    };
+    await web.lists
+      .getById(listId)
+      .items.getById(parseInt(updatedStaff.id))
+      .update(mappedStaff);
+    const file: File | undefined = (updatedStaff as any).imageFile;
+    if (file) {
+      await uploadAttachment(listId, file, parseInt(updatedStaff.id));
+    }
+    await fetchStaff();
+  };
+
+  const deleteStaff = async (staffId: string): Promise<any> => {
+    try {
+      await web.lists
+        .getById("5ec85e68-1f9d-4416-8547-307a432dd9ef")
+        .items.getById(parseInt(staffId))
+        .delete();
+    } catch (error) {
+      console.error("Error deleting staff:", error);
+    }
+    await fetchStaff();
+  };
+
+  const addLead = (data: Omit<Lead, "id">) => {
+    const newLead: Lead = { ...data, id: createId("l") };
+    setLeads((prev) => [...prev, newLead]);
+  };
+  const updateLead = (updatedLead: Lead) => {
+    setLeads((prev) =>
+      prev.map((l) => (l.id === updatedLead.id ? updatedLead : l))
+    );
+  };
+  const deleteLead = (leadId: string) => {
+    setLeads((prev) => prev.filter((l) => l.id !== leadId));
+  };
+
+  const addBatch = (data: Omit<Batch, "id">) => {
+    const newBatch: Batch = { ...data, id: createId("b") };
+    setBatches((prev) => [...prev, newBatch]);
+  };
+  const updateBatch = (updatedBatch: Batch) => {
+    setBatches((prev) =>
+      prev.map((b) => (b.id === updatedBatch.id ? updatedBatch : b))
+    );
+  };
+  const deleteBatch = (batchId: string) => {
+    setBatches((prev) => prev.filter((b) => b.id !== batchId));
+    // Also remove this batch from any students
+    // setStudents(prevStudents => prevStudents.map(s => ({
+    //     ...s,
+    //     batchIds: s.batchIds?.filter((id:any) => id !== batchId)
+    // })));
+  };
 
   // expenses
 
@@ -152,33 +367,6 @@ export const useMockData = () => {
     } catch (error: any) {
       console.error("Error fetching expenses:", error);
     }
-  };
-  
-  //upload
-  const uploadAttachment = async (
-    listId: string,
-    file: File,
-    itemId: number
-  ) => {
-    const list = web.lists.getById(listId);
-
-    // Delete old attachments first (to overwrite)
-    const existingAttachments = await list.items
-      .getById(itemId)
-      .attachmentFiles.get();
-    for (const f of existingAttachments) {
-      await list.items
-        .getById(itemId)
-        .attachmentFiles.getByName(f.FileName)
-        .delete();
-    }
-
-    // Add new attachment
-    const buffer = await file.arrayBuffer();
-    const uploaded = await list.items
-      .getById(itemId)
-      .attachmentFiles.add(file.name, buffer);
-    return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
   };
 
   const addExpense = async (item: any) => {
@@ -249,6 +437,7 @@ export const useMockData = () => {
 
   useEffect(() => {
     fetchExpenses();
+    fetchStaff();
   }, []);
 
   // assignment
@@ -329,7 +518,7 @@ export const useMockData = () => {
             studentName: item.Student?.Title || "",
             trainerId: item.Trainer?.Id?.toString() || "",
             trainerName: item.Trainer?.Title || "",
-            dueDate: item.DueDate,
+            dueDate: item.DueDate.substring(0, 10) || "",
             status: item.Status || "Pending",
             attachmentFiles: attachments, // array of attachments
             assignmentFileUrl:
@@ -988,18 +1177,18 @@ export const useMockData = () => {
     expensesData,
     getAssignments,
     expenses,
-        staff,
-     batches,
+    staff,
+    batches,
     leads,
- addStaff,
-  updateStaff,
-deleteStaff,
-  addLead,
-updateLead,
-  deleteLead,
-   addBatch,
-        updateBatch,
-        deleteBatch,
+    addStaff,
+    updateStaff,
+    deleteStaff,
+    addLead,
+    updateLead,
+    deleteLead,
+    addBatch,
+    updateBatch,
+    deleteBatch,
     addExpense,
     updateExpense,
     deleteExpense,
