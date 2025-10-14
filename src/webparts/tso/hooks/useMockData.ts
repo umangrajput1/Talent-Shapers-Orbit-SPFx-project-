@@ -243,7 +243,7 @@ export const useMockData = () => {
       const res = await web.lists
         .getById("5ec85e68-1f9d-4416-8547-307a432dd9ef")
         .items.select(
-          "Id,Title,name,email,role,expertise/Id,expertise/Title,phone,address,gender,status,about,joiningDate,employmentType,salary,salaryType,Attachments,AttachmentFiles"
+          "Id,Title,staffId,name,email,role,expertise/Id,expertise/Title,phone,address,gender,status,about,joiningDate,employmentType,salary,salaryType,Attachments,AttachmentFiles"
         )
         .expand("expertise,AttachmentFiles")
         .get();
@@ -265,6 +265,7 @@ export const useMockData = () => {
 
         return {
           id: item.Id.toString(),
+          staffId: item.staffId,
           title: item.Title,
           name: item.name,
           email: item.email,
@@ -532,23 +533,27 @@ export const useMockData = () => {
   const addAssignment = async (assignment: any) => {
     try {
       const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
-      // 1️⃣ Create item without file first
       const addRes = await web.lists.getById(listId).items.add({
         Title: assignment.title,
         CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
         StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
-        TrainerId: assignment.trainerId ? parseInt(assignment.trainerId) : null,
+        TrainerId: assignment.staffId ? parseInt(assignment.staffId) : null,
         DueDate: assignment.dueDate,
         Status: assignment.status || "Pending",
       });
 
-      // 2️⃣ Upload file as attachment if present
-      if (assignment.assignmentFile) {
-        await uploadAttachment(
-          listId,
-          assignment.assignmentFile,
-          addRes.data.Id
-        );
+      // // 2️⃣ Upload file as attachment if present
+      // if (assignment.assignmentFile) {
+      //   await uploadAttachment(
+      //     listId,
+      //     assignment.assignmentFile,
+      //     addRes.data.Id
+      //   );
+      // }
+
+      const file: File | undefined = (assignment as any).assignmentFile;
+      if (file) {
+        await uploadAttachment(listId, file, addRes.data.Id);
       }
 
       await getAssignments();
@@ -583,11 +588,8 @@ export const useMockData = () => {
             id: item.Id.toString(),
             title: item.Title,
             courseId: item.Course?.Id?.toString() || "",
-            courseName: item.Course?.Title || "",
             studentId: item.Student?.Id?.toString() || "",
-            studentName: item.Student?.Title || "",
-            trainerId: item.Trainer?.Id?.toString() || "",
-            trainerName: item.Trainer?.Title || "",
+            staffId: item.Trainer?.Id?.toString() || "",
             dueDate: item.DueDate.substring(0, 10) || "",
             status: item.Status || "Pending",
             attachmentFiles: attachments, // array of attachments
@@ -598,7 +600,6 @@ export const useMockData = () => {
           };
         })
       );
-
       setAssignments(mappedData);
     } catch (err) {
       console.error("Error fetching assignments:", err);
@@ -612,7 +613,7 @@ export const useMockData = () => {
       const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
 
       // Update item fields first
-      await web.lists
+      const updatedAssignment = await web.lists
         .getById(listId)
         .items.getById(parseInt(assignment.id))
         .update({
@@ -627,6 +628,7 @@ export const useMockData = () => {
           DueDate: assignment.dueDate,
           Status: assignment.status || "Pending",
         });
+        console.log("Assignment updated:", updatedAssignment);
 
       // Upload new attachment if provided (overwrites old)
       if (assignment.assignmentFile) {

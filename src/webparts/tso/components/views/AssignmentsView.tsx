@@ -46,7 +46,7 @@ const AssignmentsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ d
     const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
     const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
     
-    const initialFormState: any = { title: '', courseId: '', studentId: '', staffId: '', dueDate: new Date().toISOString().split('T')[0], assignmentFileUrl: '' };
+     const initialFormState: any = { title: '', courseId: '', studentId: '', staffId: '', dueDate: new Date().toISOString().split('T')[0], assignmentFileUrl: '', assignmentFile: null, };  
     const [formState, setFormState] = useState(initialFormState);
 
     const getStudentName = (studentId: string) => students.find(s => s.id === studentId)?.name || 'N/A';
@@ -71,15 +71,16 @@ const AssignmentsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ d
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormState((prev:any) => ({ ...prev, [name]: value, ...(name === 'courseId' && { studentId: '', staffId: '' }) }));
+        setFormState((prev: any) => ({ ...prev, [name]: value, ...(name === 'courseId' && { studentId: '', staffId: '' }) }));
     };
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            const base64 = await toBase64(e.target.files[0]);
-            setFormState({ ...formState, assignmentFileUrl: base64 });
+        const file = e.target.files[0];
+         const base64 = await toBase64(file);
+        setFormState({ ...formState, assignmentFileUrl: base64, assignmentFile: file as any });
         }
-    };
+ }; 
 
     const handleSubmit = () => {
         if (formState.title && formState.courseId && formState.studentId && formState.staffId) {
