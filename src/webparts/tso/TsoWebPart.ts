@@ -11,6 +11,8 @@ import * as strings from 'TsoWebPartStrings';
 import App from './App';
 import pnp from 'sp-pnp-js';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './custom.css'
+
 
 export interface ITsoWebPartProps {
   description: string;
