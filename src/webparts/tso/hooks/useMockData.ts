@@ -252,10 +252,10 @@ export const useMockData = () => {
         const attachments =
           item.AttachmentFiles && item.AttachmentFiles.length > 0
             ? item.AttachmentFiles.map((att: any) => ({
-                fileName: att.FileName,
-                serverRelativeUrl: att.ServerRelativeUrl,
-                url: `${window.location.origin}${att.ServerRelativeUrl}`,
-              }))
+              fileName: att.FileName,
+              serverRelativeUrl: att.ServerRelativeUrl,
+              url: `${window.location.origin}${att.ServerRelativeUrl}`,
+            }))
             : [];
 
         const imageUrl =
@@ -276,7 +276,7 @@ export const useMockData = () => {
           phone: item.phone,
           address: item.address,
           gender: item.gender,
-          status: item.status,  
+          status: item.status,
           about: item.about,
           joiningDate: item.joiningDate.substring(0, 10),
           employmentType: item.employmentType,
@@ -410,9 +410,9 @@ export const useMockData = () => {
           // Fetch attachments if any
           const attachments = item.Attachments
             ? await web.lists
-                .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
-                .items.getById(item.Id)
-                .attachmentFiles.get()
+              .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
+              .items.getById(item.Id)
+              .attachmentFiles.get()
             : [];
 
           return {
@@ -427,9 +427,9 @@ export const useMockData = () => {
             AttachmentUrls:
               attachments.length > 0
                 ? attachments.map(
-                    (att: any) =>
-                      `${window.location.origin}${att.ServerRelativeUrl}`
-                  )
+                  (att: any) =>
+                    `${window.location.origin}${att.ServerRelativeUrl}`
+                )
                 : [],
           };
         })
@@ -579,9 +579,9 @@ export const useMockData = () => {
           // Get attachments
           const attachments = item.Attachments
             ? await web.lists
-                .getById(listId)
-                .items.getById(item.Id)
-                .attachmentFiles.get()
+              .getById(listId)
+              .items.getById(item.Id)
+              .attachmentFiles.get()
             : [];
 
           return {
@@ -764,9 +764,9 @@ export const useMockData = () => {
             // Get attachments if any
             const attachments = item.Attachments
               ? await web.lists
-                  .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-                  .items.getById(item.Id)
-                  .attachmentFiles.get()
+                .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+                .items.getById(item.Id)
+                .attachmentFiles.get()
               : [];
 
             // Take first attachment as profile picture (if multiple)
@@ -909,7 +909,7 @@ export const useMockData = () => {
       console.error("Error deleting trainer:", err);
     }
   };
-  /// gajendra
+  /// gajendra  data
 
   const sanitizeUrl = (url?: string) => {
     if (!url) return "";
@@ -956,10 +956,11 @@ export const useMockData = () => {
     }
   };
 
-    const fetchAPIStudent = async (): Promise<Student[]> => {
+
+  const fetchAPIStudent = async (): Promise<Student[]> => {
     try {
       const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
- 
+
       const res = await web.lists
         .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items
@@ -990,7 +991,7 @@ export const useMockData = () => {
               .getById('25a7c502-9910-498e-898b-a0b37888a15e')
               .items.getById(item.Id)
               .attachmentFiles.get();
- 
+
             if (attachments && attachments.length > 0) {
               imageUrl = sanitizeUrl(attachments[0].ServerRelativeUrl || attachments[0].ServerRelativePath || '');
             } else {
@@ -1000,7 +1001,7 @@ export const useMockData = () => {
             console.warn("Could not fetch attachments for item", item.Id, err);
             imageUrl = `https://i.pravatar.cc/150?u=student${item.Id}`;
           }
- 
+
           return {
             id: String(item.Id),
             name: item.Title || "",
@@ -1009,12 +1010,12 @@ export const useMockData = () => {
             gender: item.gender || "",
             address: item.address || "",
             status: item.status || "Active",
-            joinDate: item.joinDate ? new Date(item.joinDate).toISOString().split("T")[0] : "",
+            // joinDate: item.joinDate ? new Date(item.joinDate).toISOString().split("T")[0] : "",
+            admissionDate: item.admissionDate ? new Date(item.admissionDate).toISOString().split("T")[0] : "",
             imageUrl,
             courseIds: item.courses ? item.courses.map((c: { Id: number }) => String(c.Id)) : [],
             courseNames: item.courses ? item.courses.map((c: { Title: string }) => c.Title) : [],
             batchIds: item.batches ? item.batches.map((b: { Id: number }) => String(b.Id)) : [],
-            admissionDate: item.admissionDate ? new Date(item.admissionDate).toISOString().split("T")[0] : "",
             studentId: item.studentId || '',
           };
         })
@@ -1027,16 +1028,16 @@ export const useMockData = () => {
       return [];
     }
   };
- 
+
   useEffect(() => {
     fetchCourses().catch(console.error);
     fetchAPIStudent().catch(console.error);
   }, []);
- 
+
   const addStudent = async (data: any & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
     try {
       const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
- 
+
       const studentData: any = {
         Title: data.name,
         emailAddress: data.email,
@@ -1050,15 +1051,14 @@ export const useMockData = () => {
         admissionDate: data.admissionDate || new Date().toISOString().split("T")[0],
         batchesId: { results: data.batchIds?.map((id:any) => Number(id)) || [] },
         // attachments: handled separately
-
         // do NOT set profilePicture field - we will use attachment
       };
- 
+
       // 1) Create item first
       const result = await web.lists
         .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items.add(studentData);
- 
+
       const newItemId = result.data.Id;
  
       console.log("result of adding student:", result);
@@ -1081,21 +1081,20 @@ export const useMockData = () => {
           .getById(newItemId)
           .attachmentFiles.add(file.name, file);
       }
- 
+
       // Refresh local data
       await fetchAPIStudent();
- 
+
       return { success: true, data: result };
     } catch (error) {
       console.error("addStudent (attachments) error ::", error);
       return { success: false, error: error };
     }
   };
- 
-  const updateStudent = async (updatedStudent: any & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; error?: unknown }> => {
+    const updateStudent = async (updatedStudent: any & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; error?: unknown }> => {
     try {
       const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
- 
+
       const updateData: any = {
         Title: updatedStudent.name,
         emailAddress: updatedStudent.email,
@@ -1108,13 +1107,13 @@ export const useMockData = () => {
         admissionDate: updatedStudent.admissionDate,
         batchesId: { results: updatedStudent.batchIds?.map((id:any) => Number(id)) || [] }
       };
- 
+
       // 1) Update list item fields (no attachment yet)
       await web.lists
         .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items.getById(Number(updatedStudent.id))
         .update(updateData);
- 
+
       // 2) If new file provided, remove old attachments and add new one
       if ((updatedStudent as any).imageFile) {
         const item = web.lists.getById('25a7c502-9910-498e-898b-a0b37888a15e').items.getById(Number(updatedStudent.id));
@@ -1133,7 +1132,7 @@ export const useMockData = () => {
         } catch (err) {
           console.warn("Could not delete existing attachments", err);
         }
- 
+
         // Add new
         const file: File = (updatedStudent as any).imageFile as File;
         await web.lists
@@ -1142,31 +1141,31 @@ export const useMockData = () => {
           .getById(Number(updatedStudent.id))
           .attachmentFiles.add(file.name, file);
       }
- 
+
       // Refresh local data after update
       await fetchAPIStudent();
- 
+
       return { success: true };
     } catch (error) {
       console.error("updateStudent (attachments) error ::", error);
       return { success: false, error: error };
     }
   };
- 
- 
+
+
   const deleteStudent = async (studentId: string): Promise<{ success: boolean; error?: unknown }> => {
     try {
       const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
- 
+
       await web.lists
         .getById('25a7c502-9910-498e-898b-a0b37888a15e')
         .items.getById(Number(studentId))
         .delete();
- 
+
       console.log("Student deleted successfully!");
- 
+
       await fetchAPIStudent();
- 
+
       return { success: true };
     } catch (error) {
       console.error("deleteStudent error ::", error);

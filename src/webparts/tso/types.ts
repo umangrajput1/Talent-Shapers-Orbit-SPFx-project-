@@ -1,17 +1,19 @@
 
 export interface Student {
-  batchIds: any;
+  batchIds: string[];  
   id: string;
   name: string;
   email: string;
   phone: string;
   courseIds: string[];
-  joinDate?: string;
+  admissionDate?: string;
   imageUrl?: string;
   address?: string;
   gender: 'Male' | 'Female' | 'Other';
   status: 'Active' | 'Discontinued';
+  batchNames?: string[]; // नया - UI पर दिखाने के लिए
 }
+
 
 export interface Trainer {
   id: string;
