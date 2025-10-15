@@ -973,9 +973,12 @@ export const useMockData = () => {
           'status',
           'joinDate',
           'courses/Id',
-          'courses/Title'
+          'courses/Title',
+          'batches/Id',
+          'admissionDate',
+          'studentId'
         )
-        .expand('courses')
+        .expand('courses', 'batches')
         .getAll();
       // 🧠 map function ko async banaya hai
       const mappedStudents: any = await Promise.all(
@@ -1009,11 +1012,13 @@ export const useMockData = () => {
             joinDate: item.joinDate ? new Date(item.joinDate).toISOString().split("T")[0] : "",
             imageUrl,
             courseIds: item.courses ? item.courses.map((c: { Id: number }) => String(c.Id)) : [],
-            courseNames: item.courses ? item.courses.map((c: { Title: string }) => c.Title) : []
+            courseNames: item.courses ? item.courses.map((c: { Title: string }) => c.Title) : [],
+            batchIds: item.batches ? item.batches.map((b: { Id: number }) => String(b.Id)) : [],
+            admissionDate: item.admissionDate ? new Date(item.admissionDate).toISOString().split("T")[0] : "",
+            studentId: item.studentId || '',
           };
         })
       );
- 
       setStudents(mappedStudents);
        return mappedStudents;
  
@@ -1028,7 +1033,7 @@ export const useMockData = () => {
     fetchAPIStudent().catch(console.error);
   }, []);
  
-  const addStudent = async (data: Omit<Student, 'id'> & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
+  const addStudent = async (data: any & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
     try {
       const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
  
@@ -1039,8 +1044,13 @@ export const useMockData = () => {
         gender: data.gender,
         address: data.address,
         status: data.status || "Active",
-        joinDate: data.joinDate || new Date().toISOString().split("T")[0],
-        coursesId: { results: data.courseIds?.map(id => Number(id)) || [] },
+        // joinDate: data.joinDate || new Date().toISOString().split("T")[0],
+        coursesId: { results: data.courseIds?.map((id:any) => Number(id)) || [] },
+        studentId: generateUniqueId("STU", students),
+        admissionDate: data.admissionDate || new Date().toISOString().split("T")[0],
+        batchesId: { results: data.batchIds?.map((id:any) => Number(id)) || [] },
+        // attachments: handled separately
+
         // do NOT set profilePicture field - we will use attachment
       };
  
@@ -1051,6 +1061,7 @@ export const useMockData = () => {
  
       const newItemId = result.data.Id;
  
+      console.log("result of adding student:", result);
       // 2) If caller provided a File object, upload as attachment to created item
       if ((data as any).imageFile) {
         const file: File = (data as any).imageFile as File;
@@ -1081,7 +1092,7 @@ export const useMockData = () => {
     }
   };
  
-  const updateStudent = async (updatedStudent: Student & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; error?: unknown }> => {
+  const updateStudent = async (updatedStudent: any & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; error?: unknown }> => {
     try {
       const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
  
@@ -1092,8 +1103,10 @@ export const useMockData = () => {
         gender: updatedStudent.gender,
         address: updatedStudent.address,
         status: updatedStudent.status,
-        joinDate: updatedStudent.joinDate,
-        coursesId: { results: updatedStudent.courseIds?.map(id => Number(id)) || [] }
+        // joinDate: updatedStudent.joinDate,
+        coursesId: { results: updatedStudent.courseIds?.map((id:any) => Number(id)) || [] },
+        admissionDate: updatedStudent.admissionDate,
+        batchesId: { results: updatedStudent.batchIds?.map((id:any) => Number(id)) || [] }
       };
  
       // 1) Update list item fields (no attachment yet)
