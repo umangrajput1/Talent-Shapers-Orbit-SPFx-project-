@@ -1122,124 +1122,124 @@ export const useMockData = () => {
     }
   };
 
-const fetchLeads = async (): Promise<void> => {
-  try {
-    const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+  const fetchLeads = async (): Promise<void> => {
+    try {
+      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
 
-    const res = await web.lists
-      .getById('8359e17b-d79e-465d-92c4-2e746ca8a99a')
-      .items.select(
-        "Id,Title,email,phone,interestedCourse/Id,source,status,enquiryDate,nextFollowup,assignedTo/Id,assignedTo/Title, comments"
-      )
-      .expand("assignedTo",'interestedCourse')
-      .get();
+      const res = await web.lists
+        .getById('8359e17b-d79e-465d-92c4-2e746ca8a99a')
+        .items.select(
+          "Id,Title,email,phone,interestedCourse/Id,source,status,enquiryDate,nextFollowup,assignedTo/Id,assignedTo/Title, comments"
+        )
+        .expand("assignedTo", 'interestedCourse')
+        .get();
 
-    // console.log("Raw items fetched from SharePoint:", res);
+      // console.log("Raw items fetched from SharePoint:", res);
 
-    const mappedLeads: Lead[] = res.map((item: any) => {
-      const lead = {
-        id: item.Id.toString(),
-        name: item.Title,
-        email: item.email || "",
-        phone: item.phone || "",
-        interestedCourseId: String(item.interestedCourse?.Id) || "",//interestedCourseId
-        source: item.source || "",
-        status: item.status || "",
-        comments: item.comments || "",
-        enquiryDate: item.enquiryDate
-          ? item.enquiryDate.substring(0, 10)
-          : "",
-        nextFollowUpDate: item.nextFollowup   // ✅ Correct internal name
-          ? item.nextFollowup.substring(0, 10)
-          : "",
-        assignedTo: item.assignedTo ? String(item.assignedTo.Id) : "", // ✅ Lookup ID
-        assignedToName: item.assignedTo ? item.assignedTo.Title : "", // Display name
-      };
-      return lead;
-    });
-
-    setLeads(mappedLeads);
-
-  } catch (error) {
-    console.error("Error fetching leads:", error);
-  }
-};
-
-
-
-const addLead = async (newLead: any): Promise<void> => {
-  try {
-    const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-
-    // Add item to SharePoint list
-   await web.lists
-      .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
-      .items.add({
-        Title: newLead.name,                         // Title field
-        email: newLead.email,                        // Email
-        phone: newLead.phone,                        // Phone
-        source: newLead.source,                      // Source
-        status: newLead.status,                      // Status
-        enquiryDate: newLead.enquiryDate,            // Enquiry Date
-        nextFollowup: newLead.nextFollowUpDate,     // Next Followup Date (correct internal name)
-        assignedToId: parseInt(newLead.assignedTo), // ✅ Lookup ID for assignedTo
-        interestedCourseId: parseInt(newLead.interestedCourseId), // Lookup ID for Course
-        comments: newLead.comments || ""            // Optional comments
+      const mappedLeads: Lead[] = res.map((item: any) => {
+        const lead = {
+          id: item.Id.toString(),
+          name: item.Title,
+          email: item.email || "",
+          phone: item.phone || "",
+          interestedCourseId: String(item.interestedCourse?.Id) || "",//interestedCourseId
+          source: item.source || "",
+          status: item.status || "",
+          comments: item.comments || "",
+          enquiryDate: item.enquiryDate
+            ? item.enquiryDate.substring(0, 10)
+            : "",
+          nextFollowUpDate: item.nextFollowup   // ✅ Correct internal name
+            ? item.nextFollowup.substring(0, 10)
+            : "",
+          assignedTo: item.assignedTo ? String(item.assignedTo.Id) : "", // ✅ Lookup ID
+          assignedToName: item.assignedTo ? item.assignedTo.Title : "", // Display name
+        };
+        return lead;
       });
 
+      setLeads(mappedLeads);
 
-    // Refresh the leads after adding
-    await fetchLeads();
-  } catch (error) {
-    console.error("❌ Error adding lead:", error);
-  }
-};
-
-const updateLead = async ( updatedLead: any): Promise<void> => {
-  try {
-    const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
-
-  await web.lists
-      .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
-      .items.getById(parseInt(updatedLead.id))
-      .update({
-        Title: updatedLead.name,
-        email: updatedLead.email,
-        phone: updatedLead.phone,
-        source: updatedLead.source,
-        status: updatedLead.status,
-        enquiryDate: updatedLead.enquiryDate,
-        nextFollowup: updatedLead.nextFollowUpDate,
-        assignedToId: parseInt(updatedLead.assignedTo),       // Lookup ID
-        interestedCourseId: parseInt(updatedLead.interestedCourseId), // Lookup ID
-        comments: updatedLead.comments || ""
-      });
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+    }
+  };
 
 
-    // Refresh leads
-    await fetchLeads();
-  } catch (error) {
-    console.error("❌ Error updating lead:", error);
-  }
-};
+
+  const addLead = async (newLead: any): Promise<void> => {
+    try {
+      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+
+      // Add item to SharePoint list
+      await web.lists
+        .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
+        .items.add({
+          Title: newLead.name,                         // Title field
+          email: newLead.email,                        // Email
+          phone: newLead.phone,                        // Phone
+          source: newLead.source,                      // Source
+          status: newLead.status,                      // Status
+          enquiryDate: newLead.enquiryDate,            // Enquiry Date
+          nextFollowup: newLead.nextFollowUpDate,     // Next Followup Date (correct internal name)
+          assignedToId: parseInt(newLead.assignedTo), // ✅ Lookup ID for assignedTo
+          interestedCourseId: parseInt(newLead.interestedCourseId), // Lookup ID for Course
+          comments: newLead.comments || ""            // Optional comments
+        });
 
 
-const deleteLead = async (leadId: string): Promise<void> => {
-  try {
-    const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+      // Refresh the leads after adding
+      await fetchLeads();
+    } catch (error) {
+      console.error("❌ Error adding lead:", error);
+    }
+  };
 
-    await web.lists
-      .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
-      .items.getById(parseInt(leadId))
-      .delete();
+  const updateLead = async (updatedLead: any): Promise<void> => {
+    try {
+      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+
+      await web.lists
+        .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
+        .items.getById(parseInt(updatedLead.id))
+        .update({
+          Title: updatedLead.name,
+          email: updatedLead.email,
+          phone: updatedLead.phone,
+          source: updatedLead.source,
+          status: updatedLead.status,
+          enquiryDate: updatedLead.enquiryDate,
+          nextFollowup: updatedLead.nextFollowUpDate,
+          assignedToId: parseInt(updatedLead.assignedTo),       // Lookup ID
+          interestedCourseId: parseInt(updatedLead.interestedCourseId), // Lookup ID
+          comments: updatedLead.comments || ""
+        });
 
 
-    // Refresh leads
-    await fetchLeads();
-  } catch (error) {
-    console.error("❌ Error deleting lead:", error);
-  }
-};
+      // Refresh leads
+      await fetchLeads();
+    } catch (error) {
+      console.error("❌ Error updating lead:", error);
+    }
+  };
+
+
+  const deleteLead = async (leadId: string): Promise<void> => {
+    try {
+      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+
+      await web.lists
+        .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
+        .items.getById(parseInt(leadId))
+        .delete();
+
+
+      // Refresh leads
+      await fetchLeads();
+    } catch (error) {
+      console.error("❌ Error deleting lead:", error);
+    }
+  };
 
 
 
