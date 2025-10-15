@@ -60,40 +60,8 @@ const initialBatches: Batch[] = [
   },
 ];
 
-const initialLeads: Lead[] = [
-  {
-    id: "l1",
-    name: "Potential Pete",
-    email: "pete@example.com",
-    phone: "987-654-3210",
-    interestedCourseId: "c4",
-    source: "Website",
-    status: "New",
-    enquiryDate: today.toISOString().split("T")[0],
-    nextFollowUpDate: futureDate.toISOString().split("T")[0],
-    assignedTo: "TSO-STF-003",
-  },
-  {
-    id: "l2",
-    name: "Contacted Carla",
-    email: "carla@example.com",
-    phone: "876-543-2109",
-    interestedCourseId: "c1",
-    source: "Walk-in",
-    status: "Contacted",
-    enquiryDate: pastDate.toISOString().split("T")[0],
-  },
-  {
-    id: "l3",
-    name: "Converted Chris",
-    email: "chris@example.com",
-    phone: "765-432-1098",
-    interestedCourseId: "c2",
-    source: "Referral",
-    status: "Converted",
-    enquiryDate: "2024-05-01",
-  },
-];
+// 🔹 Fetch Leads from SharePoint List
+
 
 export const useMockData = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -104,7 +72,7 @@ export const useMockData = () => {
   const [expenses, setExpenseData] = useState<any[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [batches, setBatches] = useState<Batch[]>(initialBatches);
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [leads, setLeads] = useState<Lead[]>([]);
 
   const createId = (prefix: string) => `${prefix}${Date.now()}`;
   // const getCurrentDate = () => new Date().toISOString().split('T')[0];
@@ -282,18 +250,7 @@ export const useMockData = () => {
     await fetchStaff();
   };
 
-  const addLead = (data: Omit<Lead, "id">) => {
-    const newLead: Lead = { ...data, id: createId("l") };
-    setLeads((prev) => [...prev, newLead]);
-  };
-  const updateLead = (updatedLead: Lead) => {
-    setLeads((prev) =>
-      prev.map((l) => (l.id === updatedLead.id ? updatedLead : l))
-    );
-  };
-  const deleteLead = (leadId: string) => {
-    setLeads((prev) => prev.filter((l) => l.id !== leadId));
-  };
+
 
   const addBatch = (data: Omit<Batch, "id">) => {
     const newBatch: Batch = { ...data, id: createId("b") };
@@ -438,6 +395,7 @@ export const useMockData = () => {
   useEffect(() => {
     fetchExpenses();
     fetchStaff();
+    fetchLeads();
   }, []);
 
   // assignment
@@ -1163,6 +1121,127 @@ export const useMockData = () => {
       console.error("deleteCourse error ::", error);
     }
   };
+
+const fetchLeads = async (): Promise<void> => {
+  try {
+    const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+
+    const res = await web.lists
+      .getById('8359e17b-d79e-465d-92c4-2e746ca8a99a')
+      .items.select(
+        "Id,Title,email,phone,interestedCourse/Id,source,status,enquiryDate,nextFollowup,assignedTo/Id,assignedTo/Title, comments"
+      )
+      .expand("assignedTo",'interestedCourse')
+      .get();
+
+    // console.log("Raw items fetched from SharePoint:", res);
+
+    const mappedLeads: Lead[] = res.map((item: any) => {
+      const lead = {
+        id: item.Id.toString(),
+        name: item.Title,
+        email: item.email || "",
+        phone: item.phone || "",
+        interestedCourseId: String(item.interestedCourse?.Id) || "",//interestedCourseId
+        source: item.source || "",
+        status: item.status || "",
+        comments: item.comments || "",
+        enquiryDate: item.enquiryDate
+          ? item.enquiryDate.substring(0, 10)
+          : "",
+        nextFollowUpDate: item.nextFollowup   // ✅ Correct internal name
+          ? item.nextFollowup.substring(0, 10)
+          : "",
+        assignedTo: item.assignedTo ? String(item.assignedTo.Id) : "", // ✅ Lookup ID
+        assignedToName: item.assignedTo ? item.assignedTo.Title : "", // Display name
+      };
+      return lead;
+    });
+
+    setLeads(mappedLeads);
+
+  } catch (error) {
+    console.error("Error fetching leads:", error);
+  }
+};
+
+
+
+const addLead = async (newLead: any): Promise<void> => {
+  try {
+    const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+
+    // Add item to SharePoint list
+   await web.lists
+      .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
+      .items.add({
+        Title: newLead.name,                         // Title field
+        email: newLead.email,                        // Email
+        phone: newLead.phone,                        // Phone
+        source: newLead.source,                      // Source
+        status: newLead.status,                      // Status
+        enquiryDate: newLead.enquiryDate,            // Enquiry Date
+        nextFollowup: newLead.nextFollowUpDate,     // Next Followup Date (correct internal name)
+        assignedToId: parseInt(newLead.assignedTo), // ✅ Lookup ID for assignedTo
+        interestedCourseId: parseInt(newLead.interestedCourseId), // Lookup ID for Course
+        comments: newLead.comments || ""            // Optional comments
+      });
+
+
+    // Refresh the leads after adding
+    await fetchLeads();
+  } catch (error) {
+    console.error("❌ Error adding lead:", error);
+  }
+};
+
+const updateLead = async ( updatedLead: any): Promise<void> => {
+  try {
+    const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+
+  await web.lists
+      .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
+      .items.getById(parseInt(updatedLead.id))
+      .update({
+        Title: updatedLead.name,
+        email: updatedLead.email,
+        phone: updatedLead.phone,
+        source: updatedLead.source,
+        status: updatedLead.status,
+        enquiryDate: updatedLead.enquiryDate,
+        nextFollowup: updatedLead.nextFollowUpDate,
+        assignedToId: parseInt(updatedLead.assignedTo),       // Lookup ID
+        interestedCourseId: parseInt(updatedLead.interestedCourseId), // Lookup ID
+        comments: updatedLead.comments || ""
+      });
+
+
+    // Refresh leads
+    await fetchLeads();
+  } catch (error) {
+    console.error("❌ Error updating lead:", error);
+  }
+};
+
+
+const deleteLead = async (leadId: string): Promise<void> => {
+  try {
+    const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+
+    await web.lists
+      .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
+      .items.getById(parseInt(leadId))
+      .delete();
+
+
+    // Refresh leads
+    await fetchLeads();
+  } catch (error) {
+    console.error("❌ Error deleting lead:", error);
+  }
+};
+
+
 
   return {
     expensesData,
