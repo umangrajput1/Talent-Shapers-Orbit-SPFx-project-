@@ -58,8 +58,8 @@ const StudentProfileView: React.FC<StudentProfileProps> = ({ studentId, data, on
                             </div>
                             <div className="card-body">
                                 <div className="d-flex justify-content-between mb-2">
-                                    <span className="text-body-secondary">Join Date</span>
-                                    <span className="fw-semibold">{student.joinDate}</span>
+                                    <span className="text-body-secondary">Admission Date</span>
+                                    <span className="fw-semibold">{student.admissionDate}</span>
                                 </div>
                                 <div className="mb-3">
                                     <span className="text-body-secondary d-block mb-1">Address</span>

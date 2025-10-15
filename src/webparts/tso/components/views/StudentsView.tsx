@@ -106,6 +106,7 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
     admissionDate: new Date().toISOString().split("T")[0],
     address: "",
     imageUrl: "",
+    imageFile: null,
     gender: "Male",
     status: "Active",
   };
@@ -180,8 +181,9 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const base64 = await toBase64(e.target.files[0]);
-      setFormState({ ...formState, imageUrl: base64 });
+      const file = e.target.files[0];
+      const base64 = await toBase64(file);
+      setFormState({ ...formState, imageUrl: base64, imageFile: file as any });
     }
   };
 

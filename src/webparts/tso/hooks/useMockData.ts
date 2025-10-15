@@ -98,7 +98,7 @@ const initialLeads: Lead[] = [
 export const useMockData = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
-  const [trainers, setTrainers] = useState<any[]>([]);
+  // const [trainers, setTrainers] = useState<any[]>([]);
   const [feePayments, setFeePayments] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [expenses, setExpenseData] = useState<any[]>([]);
@@ -747,168 +747,168 @@ export const useMockData = () => {
     }
   };
 
-  // trainer model
-  useEffect(() => {
-    const getTrainers = async (): Promise<void> => {
-      try {
-        const list = await web.lists
-          .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-          .items.select(
-            "Id,Title,FullName,Email,Phone,Gender,Address,Expertise/Id,Expertise/Title,Attachments"
-          )
-          .expand("Expertise")
-          .get();
+  // // trainer model
+  // useEffect(() => {
+  //   const getTrainers = async (): Promise<void> => {
+  //     try {
+  //       const list = await web.lists
+  //         .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+  //         .items.select(
+  //           "Id,Title,FullName,Email,Phone,Gender,Address,Expertise/Id,Expertise/Title,Attachments"
+  //         )
+  //         .expand("Expertise")
+  //         .get();
 
-        const formatted = await Promise.all(
-          list.map(async (item: any) => {
-            // Get attachments if any
-            const attachments = item.Attachments
-              ? await web.lists
-                .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-                .items.getById(item.Id)
-                .attachmentFiles.get()
-              : [];
+  //       const formatted = await Promise.all(
+  //         list.map(async (item: any) => {
+  //           // Get attachments if any
+  //           const attachments = item.Attachments
+  //             ? await web.lists
+  //               .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+  //               .items.getById(item.Id)
+  //               .attachmentFiles.get()
+  //             : [];
 
-            // Take first attachment as profile picture (if multiple)
-            const imageUrl =
-              attachments.length > 0
-                ? `${window.location.origin}${attachments[0].ServerRelativeUrl}`
-                : "";
+  //           // Take first attachment as profile picture (if multiple)
+  //           const imageUrl =
+  //             attachments.length > 0
+  //               ? `${window.location.origin}${attachments[0].ServerRelativeUrl}`
+  //               : "";
 
-            return {
-              id: item.Id.toString(),
-              name: item.FullName,
-              email: item.Email,
-              phone: item.Phone,
-              address: item.Address,
-              gender: item.Gender,
-              imageUrl,
-              expertise: item.Expertise.map((ex: any) => ex.Id.toString()),
-              attachments, // store all attachments
-            };
-          })
-        );
+  //           return {
+  //             id: item.Id.toString(),
+  //             name: item.FullName,
+  //             email: item.Email,
+  //             phone: item.Phone,
+  //             address: item.Address,
+  //             gender: item.Gender,
+  //             imageUrl,
+  //             expertise: item.Expertise.map((ex: any) => ex.Id.toString()),
+  //             attachments, // store all attachments
+  //           };
+  //         })
+  //       );
 
-        setTrainers(formatted);
-      } catch (err) {
-        console.error("Error fetching trainers:", err);
-      }
-    };
+  //       setTrainers(formatted);
+  //     } catch (err) {
+  //       console.error("Error fetching trainers:", err);
+  //     }
+  //   };
 
-    getTrainers();
-  }, []);
+  //   getTrainers();
+  // }, []);
 
-  const uploadTrainerAttachment = async (itemId: number, file: File) => {
-    // Delete old attachment if exists
-    const attachments = await web.lists
-      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-      .items.getById(itemId)
-      .attachmentFiles.get();
+  // const uploadTrainerAttachment = async (itemId: number, file: File) => {
+  //   // Delete old attachment if exists
+  //   const attachments = await web.lists
+  //     .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+  //     .items.getById(itemId)
+  //     .attachmentFiles.get();
 
-    for (const f of attachments) {
-      await web.lists
-        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-        .items.getById(itemId)
-        .attachmentFiles.getByName(f.FileName)
-        .delete();
-    }
+  //   for (const f of attachments) {
+  //     await web.lists
+  //       .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+  //       .items.getById(itemId)
+  //       .attachmentFiles.getByName(f.FileName)
+  //       .delete();
+  //   }
 
-    // Add new attachment
-    const buffer = await file.arrayBuffer();
-    const uploaded = await web.lists
-      .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-      .items.getById(itemId)
-      .attachmentFiles.add(file.name, buffer);
+  //   // Add new attachment
+  //   const buffer = await file.arrayBuffer();
+  //   const uploaded = await web.lists
+  //     .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+  //     .items.getById(itemId)
+  //     .attachmentFiles.add(file.name, buffer);
 
-    return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
-  };
+  //   return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
+  // };
 
-  // 🔹 Add a new trainer
-  const addTrainer = async (trainer: any) => {
-    try {
-      const item = await web.lists
-        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-        .items.add({
-          Title: trainer.name,
-          FullName: trainer.name,
-          Email: trainer.email,
-          Phone: trainer.phone,
-          Address: trainer.address,
-          Gender: trainer.gender,
-          ExpertiseId: {
-            results: trainer.expertise.map((id: any) => parseInt(id)),
-          },
-        });
+  // // 🔹 Add a new trainer
+  // const addTrainer = async (trainer: any) => {
+  //   try {
+  //     const item = await web.lists
+  //       .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+  //       .items.add({
+  //         Title: trainer.name,
+  //         FullName: trainer.name,
+  //         Email: trainer.email,
+  //         Phone: trainer.phone,
+  //         Address: trainer.address,
+  //         Gender: trainer.gender,
+  //         ExpertiseId: {
+  //           results: trainer.expertise.map((id: any) => parseInt(id)),
+  //         },
+  //       });
 
-      let imageUrl = "";
-      if (trainer.imageFile) {
-        imageUrl = await uploadTrainerAttachment(
-          item.data.Id,
-          trainer.imageFile
-        );
-      }
+  //     let imageUrl = "";
+  //     if (trainer.imageFile) {
+  //       imageUrl = await uploadTrainerAttachment(
+  //         item.data.Id,
+  //         trainer.imageFile
+  //       );
+  //     }
 
-      const newTrainer = {
-        ...trainer,
-        id: item.data.Id.toString(),
-        imageUrl,
-      };
-      setTrainers([...trainers, newTrainer]);
-    } catch (err) {
-      console.error("Error adding trainer:", err);
-    }
-  };
-  // 🔹 Update trainer
-  const updateTrainer = async (trainer: any): Promise<void> => {
-    try {
-      await web.lists
-        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-        .items.getById(parseInt(trainer.id))
-        .update({
-          FullName: trainer.name,
-          Email: trainer.email,
-          Phone: trainer.phone,
-          Address: trainer.address,
-          Gender: trainer.gender,
-          ExpertiseId: {
-            results: trainer.expertise.map((id: any) => parseInt(id)),
-          },
-        });
+  //     const newTrainer = {
+  //       ...trainer,
+  //       id: item.data.Id.toString(),
+  //       imageUrl,
+  //     };
+  //     setTrainers([...trainers, newTrainer]);
+  //   } catch (err) {
+  //     console.error("Error adding trainer:", err);
+  //   }
+  // };
+  // // 🔹 Update trainer
+  // const updateTrainer = async (trainer: any): Promise<void> => {
+  //   try {
+  //     await web.lists
+  //       .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+  //       .items.getById(parseInt(trainer.id))
+  //       .update({
+  //         FullName: trainer.name,
+  //         Email: trainer.email,
+  //         Phone: trainer.phone,
+  //         Address: trainer.address,
+  //         Gender: trainer.gender,
+  //         ExpertiseId: {
+  //           results: trainer.expertise.map((id: any) => parseInt(id)),
+  //         },
+  //       });
 
-      let imageUrl = trainer.imageUrl || "";
-      if (trainer.imageFile) {
-        imageUrl = await uploadTrainerAttachment(
-          parseInt(trainer.id),
-          trainer.imageFile
-        );
-      }
+  //     let imageUrl = trainer.imageUrl || "";
+  //     if (trainer.imageFile) {
+  //       imageUrl = await uploadTrainerAttachment(
+  //         parseInt(trainer.id),
+  //         trainer.imageFile
+  //       );
+  //     }
 
-      const updatedTrainer = {
-        ...trainer,
-        imageUrl,
-      };
+  //     const updatedTrainer = {
+  //       ...trainer,
+  //       imageUrl,
+  //     };
 
-      setTrainers(
-        trainers.map((t) => (t.id === trainer.id ? updatedTrainer : t))
-      );
-    } catch (err) {
-      console.error("Error updating trainer:", err);
-    }
-  };
+  //     setTrainers(
+  //       trainers.map((t) => (t.id === trainer.id ? updatedTrainer : t))
+  //     );
+  //   } catch (err) {
+  //     console.error("Error updating trainer:", err);
+  //   }
+  // };
 
-  // 🔹 Delete trainer
-  const deleteTrainer = async (id: string): Promise<void> => {
-    try {
-      await web.lists
-        .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-        .items.getById(parseInt(id))
-        .delete();
+  // // 🔹 Delete trainer
+  // const deleteTrainer = async (id: string): Promise<void> => {
+  //   try {
+  //     await web.lists
+  //       .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
+  //       .items.getById(parseInt(id))
+  //       .delete();
 
-      setTrainers(trainers.filter((t) => t.id !== id));
-    } catch (err) {
-      console.error("Error deleting trainer:", err);
-    }
-  };
+  //     setTrainers(trainers.filter((t) => t.id !== id));
+  //   } catch (err) {
+  //     console.error("Error deleting trainer:", err);
+  //   }
+  // };
   /// gajendra  data
 
   const sanitizeUrl = (url?: string) => {
@@ -1114,40 +1114,16 @@ export const useMockData = () => {
         .items.getById(Number(updatedStudent.id))
         .update(updateData);
 
-      // 2) If new file provided, remove old attachments and add new one
-      if ((updatedStudent as any).imageFile) {
-        const item = web.lists.getById('25a7c502-9910-498e-898b-a0b37888a15e').items.getById(Number(updatedStudent.id));
-        // Delete existing attachments (optional, to keep single profile image)
-        try {
-          const existing = await item.attachmentFiles.get();
-          for (const a of existing) {
-            // delete by name
-            await web.lists
-              .getById('25a7c502-9910-498e-898b-a0b37888a15e')
-              .items
-              .getById(Number(updatedStudent.id))
-              .attachmentFiles.getByName(a.FileName)
-              .delete();
-          }
-        } catch (err) {
-          console.warn("Could not delete existing attachments", err);
-        }
-
-        // Add new
-        const file: File = (updatedStudent as any).imageFile as File;
-        await web.lists
-          .getById('25a7c502-9910-498e-898b-a0b37888a15e')
-          .items
-          .getById(Number(updatedStudent.id))
-          .attachmentFiles.add(file.name, file);
-      }
+        const file: File | undefined = (updatedStudent as any).imageFile;
+    if (file) {
+      await uploadAttachment("25a7c502-9910-498e-898b-a0b37888a15e", file, parseInt(updatedStudent.id));
+    }
 
       // Refresh local data after update
       await fetchAPIStudent();
 
       return { success: true };
     } catch (error) {
-      console.error("updateStudent (attachments) error ::", error);
       return { success: false, error: error };
     }
   };
@@ -1257,16 +1233,16 @@ export const useMockData = () => {
     updateExpense,
     deleteExpense,
     courses,
-    trainers,
+    // trainers,
     students,
     feePayments,
     assignments,
     addStudent,
     updateStudent,
     deleteStudent,
-    addTrainer,
-    updateTrainer,
-    deleteTrainer,
+    // addTrainer,
+    // updateTrainer,
+    // deleteTrainer,
     addCourse,
     updateCourse,
     deleteCourse,
