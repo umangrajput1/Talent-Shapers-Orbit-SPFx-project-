@@ -3,12 +3,6 @@ import type { Student, Course, Staff, Batch, Lead } from "../types";
 import { web } from "../PnpUrl";
 import { Web } from "sp-pnp-js";
 
-// const initialStaff: Staff[] = [
-//   { id: 'TSO-STF-001', name: 'John Doe', email: 'john.doe@example.com', role: 'Trainer', expertise: ['c1', 'c2'], phone: '555-0101', address: '123 Grammar Lane', imageUrl: `https://i.pravatar.cc/150?u=t1`, gender: 'Male', status: 'Active', about: 'John is a certified ESL instructor with over 10 years of experience helping students gain confidence in their English speaking and listening skills.', joiningDate: '2022-08-01', employmentType: 'Full-time', salary: 50000, salaryType: 'Monthly' },
-//   { id: 'TSO-STF-002', name: 'Jane Smith', email: 'jane.smith@example.com', role: 'Trainer', expertise: ['c3', 'c4'], phone: '555-0102', address: '456 Code Street', imageUrl: `https://i.pravatar.cc/150?u=t2`, gender: 'Female', status: 'Active', about: 'A full-stack developer with a passion for teaching, Jane specializes in modern web technologies like React, Node.js, and cloud deployment.', joiningDate: '2021-11-15', employmentType: 'Part-time', salary: 800, salaryType: 'Hourly' },
-//   { id: 'TSO-STF-003', name: 'Peter Jones', email: 'peter.jones@example.com', role: 'Counsellor', phone: '555-0103', address: '789 Advice Avenue', imageUrl: `https://i.pravatar.cc/150?u=t3`, gender: 'Male', status: 'Active', about: 'Peter has a background in psychology and helps students choose the right career path and courses.', joiningDate: '2023-01-20', employmentType: 'Full-time', salary: 45000, salaryType: 'Monthly' },
-// ];
-
 const today = new Date();
 const pastDate = new Date();
 pastDate.setDate(today.getDate() - 15);
@@ -16,49 +10,6 @@ const futureDate = new Date();
 futureDate.setDate(today.getDate() + 15);
 const veryFutureDate = new Date();
 veryFutureDate.setDate(today.getDate() + 45); // For testing upcoming payments > 30 days
-
-// const initialBatches: Batch[] = [
-//   {
-//     id: "b1",
-//     name: "Morning English (A)",
-//     courseId: "c1",
-//     staffId: "TSO-STF-001",
-//     weekdays: ["Mon", "Wed", "Fri"],
-//     time: "08:00 - 10:00",
-//     startDate: "2023-01-15",
-//     status: "Ongoing",
-//   },
-//   {
-//     id: "b2",
-//     name: "Afternoon Computing (A)",
-//     courseId: "c3",
-//     staffId: "TSO-STF-002",
-//     weekdays: ["Tue", "Thu"],
-//     time: "13:00 - 15:00",
-//     startDate: "2023-02-20",
-//     status: "Ongoing",
-//   },
-//   {
-//     id: "b3",
-//     name: "Evening Web Dev (A)",
-//     courseId: "c4",
-//     staffId: "TSO-STF-002",
-//     weekdays: ["Mon", "Wed", "Fri"],
-//     time: "17:00 - 19:00",
-//     startDate: "2023-03-01",
-//     status: "Completed",
-//   },
-//   {
-//     id: "b4",
-//     name: "Advanced English (B)",
-//     courseId: "c2",
-//     staffId: "TSO-STF-001",
-//     weekdays: ["Tue", "Thu", "Sat"],
-//     time: "10:00 - 12:00",
-//     startDate: "2024-08-01",
-//     status: "Upcoming",
-//   },
-// ];
 
 const initialLeads: Lead[] = [
   {
@@ -150,15 +101,18 @@ export const useMockData = () => {
     return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
   };
 
-  // Batches model 
+  // Batches model
 
-  const batcheListId = "3d055690-e98b-4ebf-899f-7b4ab3b09816"
+  const batcheListId = "3d055690-e98b-4ebf-899f-7b4ab3b09816";
   const fetchBatches = async (): Promise<any> => {
     try {
-      const res = await web.lists.getById(batcheListId).items
-      .select("Id,name,courseId/Id,courseId/Title,staffId/Id,staffId/Title,weekdays,time,startDate,status")
-      .expand("courseId,staffId")
-      .get();
+      const res = await web.lists
+        .getById(batcheListId)
+        .items.select(
+          "Id,name,courseId/Id,courseId/Title,staffId/Id,staffId/Title,weekdays,time,startDate,status"
+        )
+        .expand("courseId,staffId")
+        .get();
 
       const mappedBatches = res.map((item: any) => ({
         id: item.Id.toString(),
@@ -180,37 +134,41 @@ export const useMockData = () => {
   }, []);
 
   const addBatch = async (data: Omit<Batch, "id">): Promise<void> => {
-  console.log("Adding batch:", data);
-  try {
-    await web.lists.getById(batcheListId).items.add({
-      Title: data.name, 
-      name: data.name, 
-      courseIdId: parseInt(data.courseId), 
-      staffIdId: parseInt(data.staffId),  
-      weekdays: data.weekdays ? { results: data.weekdays } : { results: [] },
-      time: data.time,
-      startDate: data.startDate,
-      status: data.status,
-    });
-  } catch (error) {
-    console.error("Error adding batch:", error);
-  }
-  await fetchBatches();
-};
 
-  const updateBatch = async(updatedBatch: Batch):Promise<any> => {
-    console.log("Updating batch:", updatedBatch);
     try {
-      await web.lists.getById(batcheListId).items.getById(parseInt(updatedBatch.id)).update({
-        Title: updatedBatch.name,
-        name: updatedBatch.name,
-        courseIdId: parseInt(updatedBatch.courseId),
-        staffIdId: parseInt(updatedBatch.staffId),
-        weekdays: updatedBatch.weekdays ? { results: updatedBatch.weekdays } : { results: [] },
-        time: updatedBatch.time,
-        startDate: updatedBatch.startDate,
-        status: updatedBatch.status,
+      await web.lists.getById(batcheListId).items.add({
+        Title: data.name,
+        name: data.name,
+        courseIdId: parseInt(data.courseId),
+        staffIdId: parseInt(data.staffId),
+        weekdays: data.weekdays ? { results: data.weekdays } : { results: [] },
+        time: data.time,
+        startDate: data.startDate,
+        status: data.status,
       });
+    } catch (error) {
+      console.error("Error adding batch:", error);
+    }
+    await fetchBatches();
+  };
+
+  const updateBatch = async (updatedBatch: Batch): Promise<any> => {
+    try {
+      await web.lists
+        .getById(batcheListId)
+        .items.getById(parseInt(updatedBatch.id))
+        .update({
+          Title: updatedBatch.name,
+          name: updatedBatch.name,
+          courseIdId: parseInt(updatedBatch.courseId),
+          staffIdId: parseInt(updatedBatch.staffId),
+          weekdays: updatedBatch.weekdays
+            ? { results: updatedBatch.weekdays }
+            : { results: [] },
+          time: updatedBatch.time,
+          startDate: updatedBatch.startDate,
+          status: updatedBatch.status,
+        });
     } catch (error) {
       console.error("Error updating batch:", error);
     }
@@ -219,12 +177,14 @@ export const useMockData = () => {
     //   prev.map((b) => (b.id === updatedBatch.id ? updatedBatch : b))
     // );
   };
-  const deleteBatch = async(batchId: string) :Promise <any>=> {
-    console.log("Deleting batch:", batchId);
+  const deleteBatch = async (batchId: string): Promise<any> => {
     try {
-      await web.lists.getById(batcheListId).items.getById(parseInt(batchId)).delete();
+      await web.lists
+        .getById(batcheListId)
+        .items.getById(parseInt(batchId))
+        .delete();
     } catch (error) {
-      console.error("Error deleting batch:", error);  
+      console.error("Error deleting batch:", error);
     }
     await fetchBatches();
     // setBatches((prev) => prev.filter((b) => b.id !== batchId));
@@ -234,8 +194,6 @@ export const useMockData = () => {
     //     batchIds: s.batchIds?.filter((id:any) => id !== batchId)
     // })));
   };
-
-
 
   // fetch staff added
   const fetchStaff = async (): Promise<any> => {
@@ -252,10 +210,10 @@ export const useMockData = () => {
         const attachments =
           item.AttachmentFiles && item.AttachmentFiles.length > 0
             ? item.AttachmentFiles.map((att: any) => ({
-              fileName: att.FileName,
-              serverRelativeUrl: att.ServerRelativeUrl,
-              url: `${window.location.origin}${att.ServerRelativeUrl}`,
-            }))
+                fileName: att.FileName,
+                serverRelativeUrl: att.ServerRelativeUrl,
+                url: `${window.location.origin}${att.ServerRelativeUrl}`,
+              }))
             : [];
 
         const imageUrl =
@@ -320,7 +278,6 @@ export const useMockData = () => {
         await uploadAttachment(listId, file, res.data.Id);
       }
 
-      console.log("Staff added:", res);
       await fetchStaff();
     } catch (error) {
       console.error("Error adding staff:", error);
@@ -383,7 +340,6 @@ export const useMockData = () => {
     setLeads((prev) => prev.filter((l) => l.id !== leadId));
   };
 
-
   // expenses
 
   const expensesData = expenses.map((item) => ({
@@ -410,9 +366,9 @@ export const useMockData = () => {
           // Fetch attachments if any
           const attachments = item.Attachments
             ? await web.lists
-              .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
-              .items.getById(item.Id)
-              .attachmentFiles.get()
+                .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
+                .items.getById(item.Id)
+                .attachmentFiles.get()
             : [];
 
           return {
@@ -427,9 +383,9 @@ export const useMockData = () => {
             AttachmentUrls:
               attachments.length > 0
                 ? attachments.map(
-                  (att: any) =>
-                    `${window.location.origin}${att.ServerRelativeUrl}`
-                )
+                    (att: any) =>
+                      `${window.location.origin}${att.ServerRelativeUrl}`
+                  )
                 : [],
           };
         })
@@ -579,9 +535,9 @@ export const useMockData = () => {
           // Get attachments
           const attachments = item.Attachments
             ? await web.lists
-              .getById(listId)
-              .items.getById(item.Id)
-              .attachmentFiles.get()
+                .getById(listId)
+                .items.getById(item.Id)
+                .attachmentFiles.get()
             : [];
 
           return {
@@ -613,18 +569,19 @@ export const useMockData = () => {
       const listId = "1d5452dc-7b1d-430b-b316-0680492ffd48";
 
       // Update item fields first
-      const updatedAssignment = await web.lists
+      await web.lists
         .getById(listId)
         .items.getById(parseInt(assignment.id))
         .update({
           Title: assignment.title,
           CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
-          StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
+          StudentId: assignment.studentId
+            ? parseInt(assignment.studentId)
+            : null,
           TrainerId: assignment.staffId ? parseInt(assignment.staffId) : null,
           DueDate: assignment.dueDate,
           Status: assignment.status || "Pending",
         });
-        console.log("Assignment updated:", updatedAssignment);
 
       // Upload new attachment if provided (overwrites old)
       if (assignment.assignmentFile) {
@@ -952,30 +909,28 @@ export const useMockData = () => {
     }
   };
 
-
   const fetchAPIStudent = async (): Promise<Student[]> => {
     try {
-      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
 
       const res = await web.lists
-        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
-        .items
-        .select(
-          'Id',
-          'Title',
-          'emailAddress',
-          'phoneNumber',
-          'gender',
-          'address',
-          'status',
-          'joinDate',
-          'courses/Id',
-          'courses/Title',
-          'batches/Id',
-          'admissionDate',
-          'studentId'
+        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
+        .items.select(
+          "Id",
+          "Title",
+          "emailAddress",
+          "phoneNumber",
+          "gender",
+          "address",
+          "status",
+          "joinDate",
+          "courses/Id",
+          "courses/Title",
+          "batches/Id",
+          "admissionDate",
+          "studentId"
         )
-        .expand('courses', 'batches')
+        .expand("courses", "batches")
         .getAll();
       // 🧠 map function ko async banaya hai
       const mappedStudents: any = await Promise.all(
@@ -984,12 +939,16 @@ export const useMockData = () => {
           try {
             // Fetch attachment files for this item
             const attachments = await web.lists
-              .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+              .getById("25a7c502-9910-498e-898b-a0b37888a15e")
               .items.getById(item.Id)
               .attachmentFiles.get();
 
             if (attachments && attachments.length > 0) {
-              imageUrl = sanitizeUrl(attachments[0].ServerRelativeUrl || attachments[0].ServerRelativePath || '');
+              imageUrl = sanitizeUrl(
+                attachments[0].ServerRelativeUrl ||
+                  attachments[0].ServerRelativePath ||
+                  ""
+              );
             } else {
               imageUrl = `https://i.pravatar.cc/150?u=student${item.Id}`;
             }
@@ -1007,18 +966,25 @@ export const useMockData = () => {
             address: item.address || "",
             status: item.status || "Active",
             // joinDate: item.joinDate ? new Date(item.joinDate).toISOString().split("T")[0] : "",
-            admissionDate: item.admissionDate ? new Date(item.admissionDate).toISOString().split("T")[0] : "",
+            admissionDate: item.admissionDate
+              ? new Date(item.admissionDate).toISOString().split("T")[0]
+              : "",
             imageUrl,
-            courseIds: item.courses ? item.courses.map((c: { Id: number }) => String(c.Id)) : [],
-            courseNames: item.courses ? item.courses.map((c: { Title: string }) => c.Title) : [],
-            batchIds: item.batches ? item.batches.map((b: { Id: number }) => String(b.Id)) : [],
-            studentId: item.studentId || '',
+            courseIds: item.courses
+              ? item.courses.map((c: { Id: number }) => String(c.Id))
+              : [],
+            courseNames: item.courses
+              ? item.courses.map((c: { Title: string }) => c.Title)
+              : [],
+            batchIds: item.batches
+              ? item.batches.map((b: { Id: number }) => String(b.Id))
+              : [],
+            studentId: item.studentId || "",
           };
         })
       );
       setStudents(mappedStudents);
-       return mappedStudents;
- 
+      return mappedStudents;
     } catch (error) {
       console.error("fetchStudents error ::", error);
       return [];
@@ -1030,9 +996,11 @@ export const useMockData = () => {
     fetchAPIStudent().catch(console.error);
   }, []);
 
-  const addStudent = async (data: any & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
+  const addStudent = async (
+    data: any & { imageFile?: File; imageUrl?: string }
+  ): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
     try {
-      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
 
       const studentData: any = {
         Title: data.name,
@@ -1042,39 +1010,41 @@ export const useMockData = () => {
         address: data.address,
         status: data.status || "Active",
         // joinDate: data.joinDate || new Date().toISOString().split("T")[0],
-        coursesId: { results: data.courseIds?.map((id:any) => Number(id)) || [] },
+        coursesId: {
+          results: data.courseIds?.map((id: any) => Number(id)) || [],
+        },
         studentId: generateUniqueId("STU", students),
-        admissionDate: data.admissionDate || new Date().toISOString().split("T")[0],
-        batchesId: { results: data.batchIds?.map((id:any) => Number(id)) || [] },
+        admissionDate:
+          data.admissionDate || new Date().toISOString().split("T")[0],
+        batchesId: {
+          results: data.batchIds?.map((id: any) => Number(id)) || [],
+        },
         // attachments: handled separately
         // do NOT set profilePicture field - we will use attachment
       };
 
       // 1) Create item first
       const result = await web.lists
-        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
         .items.add(studentData);
 
       const newItemId = result.data.Id;
- 
-      console.log("result of adding student:", result);
+
       // 2) If caller provided a File object, upload as attachment to created item
       if ((data as any).imageFile) {
         const file: File = (data as any).imageFile as File;
         await web.lists
-          .getById('25a7c502-9910-498e-898b-a0b37888a15e')
-          .items
-          .getById(newItemId)
+          .getById("25a7c502-9910-498e-898b-a0b37888a15e")
+          .items.getById(newItemId)
           .attachmentFiles.add(file.name, file);
-      } else if (data.imageUrl && data.imageUrl.startsWith('data:')) {
+      } else if (data.imageUrl && data.imageUrl.startsWith("data:")) {
         // optional: handle base64 by converting to File then attach
         const blob = dataUrlToBlob(data.imageUrl);
         const fileName = `student_${Date.now()}.png`;
         const file = blobToFile(blob, fileName);
         await web.lists
-          .getById('25a7c502-9910-498e-898b-a0b37888a15e')
-          .items
-          .getById(newItemId)
+          .getById("25a7c502-9910-498e-898b-a0b37888a15e")
+          .items.getById(newItemId)
           .attachmentFiles.add(file.name, file);
       }
 
@@ -1087,9 +1057,11 @@ export const useMockData = () => {
       return { success: false, error: error };
     }
   };
-    const updateStudent = async (updatedStudent: any & { imageFile?: File, imageUrl?: string }): Promise<{ success: boolean; error?: unknown }> => {
+  const updateStudent = async (
+    updatedStudent: any & { imageFile?: File; imageUrl?: string }
+  ): Promise<{ success: boolean; error?: unknown }> => {
     try {
-      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
 
       const updateData: any = {
         Title: updatedStudent.name,
@@ -1099,21 +1071,29 @@ export const useMockData = () => {
         address: updatedStudent.address,
         status: updatedStudent.status,
         // joinDate: updatedStudent.joinDate,
-        coursesId: { results: updatedStudent.courseIds?.map((id:any) => Number(id)) || [] },
+        coursesId: {
+          results: updatedStudent.courseIds?.map((id: any) => Number(id)) || [],
+        },
         admissionDate: updatedStudent.admissionDate,
-        batchesId: { results: updatedStudent.batchIds?.map((id:any) => Number(id)) || [] }
+        batchesId: {
+          results: updatedStudent.batchIds?.map((id: any) => Number(id)) || [],
+        },
       };
 
       // 1) Update list item fields (no attachment yet)
       await web.lists
-        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
         .items.getById(Number(updatedStudent.id))
         .update(updateData);
 
-        const file: File | undefined = (updatedStudent as any).imageFile;
-    if (file) {
-      await uploadAttachment("25a7c502-9910-498e-898b-a0b37888a15e", file, parseInt(updatedStudent.id));
-    }
+      const file: File | undefined = (updatedStudent as any).imageFile;
+      if (file) {
+        await uploadAttachment(
+          "25a7c502-9910-498e-898b-a0b37888a15e",
+          file,
+          parseInt(updatedStudent.id)
+        );
+      }
 
       // Refresh local data after update
       await fetchAPIStudent();
@@ -1124,17 +1104,17 @@ export const useMockData = () => {
     }
   };
 
-
-  const deleteStudent = async (studentId: string): Promise<{ success: boolean; error?: unknown }> => {
+  const deleteStudent = async (
+    studentId: string
+  ): Promise<{ success: boolean; error?: unknown }> => {
     try {
-      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
 
       await web.lists
-        .getById('25a7c502-9910-498e-898b-a0b37888a15e')
+        .getById("25a7c502-9910-498e-898b-a0b37888a15e")
         .items.getById(Number(studentId))
         .delete();
 
-      console.log("Student deleted successfully!");
 
       await fetchAPIStudent();
 
