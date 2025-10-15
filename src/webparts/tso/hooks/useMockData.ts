@@ -619,12 +619,8 @@ export const useMockData = () => {
         .update({
           Title: assignment.title,
           CourseId: assignment.courseId ? parseInt(assignment.courseId) : null,
-          StudentId: assignment.studentId
-            ? parseInt(assignment.studentId)
-            : null,
-          TrainerId: assignment.trainerId
-            ? parseInt(assignment.trainerId)
-            : null,
+          StudentId: assignment.studentId ? parseInt(assignment.studentId) : null,
+          TrainerId: assignment.staffId ? parseInt(assignment.staffId) : null,
           DueDate: assignment.dueDate,
           Status: assignment.status || "Pending",
         });
