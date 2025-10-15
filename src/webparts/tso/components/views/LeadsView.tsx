@@ -50,9 +50,8 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data })
     const [editingLead, setEditingLead] = useState<Lead | null>(null);
     const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
-    const initialFormState: Omit<Lead, 'id'> = { name: '', email: '', phone: '', interestedCourseId: '', source: 'Walk-in', status: 'New', enquiryDate: new Date().toISOString().split('T')[0], nextFollowUpDate: '', assignedTo: '', comments: '' };
+    const initialFormState: any = { name: '', email: '', phone: '', interestedCourseId: '', source: 'Walk-in', status: 'New', enquiryDate: new Date().toISOString().split('T')[0], nextFollowUpDate: '', assignedTo: '', comments: '' };
     const [formState, setFormState] = useState(initialFormState);
-
     const handleOpenModal = (lead: Lead | null = null) => {
         if (lead) {
             setEditingLead(lead);
