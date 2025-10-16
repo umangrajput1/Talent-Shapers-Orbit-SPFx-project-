@@ -577,7 +577,7 @@ export const useMockData = () => {
       const items = await web.lists
         .getById("29c80eac-d776-4043-819a-dab43a982585")
         .items.select(
-          "Id,Title,Student/ID,Student/Title,Amount,Date,Status,PaymentMethod"
+          "Id,Title,Student/ID,Student/Title,Amount,Date,Status,PaymentMethod,comments"
         )
         .expand("Student")
         .get();
@@ -590,6 +590,7 @@ export const useMockData = () => {
         status: item.Status,
         paymentMethod: item.PaymentMethod,
         studentName: item.StudentId?.Title || "",
+        comments: item.comments || "",
       }));
       setFeePayments(mapped);
     } catch (err) {
@@ -613,13 +614,14 @@ export const useMockData = () => {
           Date: data.date,
           Status: data.status,
           PaymentMethod: data.paymentMethod,
+          comments: data.comments || "",
         });
       await fetchFeePayments();
     } catch (err) {
       console.error("Error adding fee payment:", err);
     }
-  };
-
+  }
+  
   // Update Fee Payment
   const updateFeePayment = async (updatedPayment: any) => {
     try {
@@ -632,6 +634,7 @@ export const useMockData = () => {
           Date: updatedPayment.date,
           Status: updatedPayment.status,
           PaymentMethod: updatedPayment.paymentMethod,
+          comments: updatedPayment.comments,
         });
 
       await fetchFeePayments();
