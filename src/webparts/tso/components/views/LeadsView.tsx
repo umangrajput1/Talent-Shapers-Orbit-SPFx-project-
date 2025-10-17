@@ -1,11 +1,10 @@
-import React, { useState, useRef } from "react";
-import * as XLSX from "xlsx";
-
+import React, { useState, useRef, useEffect } from "react";
 import Table from "../common/Table";
 import Modal from "../common/Modal";
 import ConfirmationModal from "../common/ConfirmationModal";
 import { useMockData } from "../../hooks/useMockData";
 import type { Lead } from "../../types";
+import * as XLSX from "xlsx";
 
 // Icons
 const EditIcon: React.FC<{ className?: string }> = (props) => (
@@ -80,6 +79,24 @@ const DownloadIcon: React.FC<{ className?: string }> = (props) => (
     />
   </svg>
 );
+const CommentIcon: React.FC<{ className?: string }> = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    width="16"
+    height="16"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+    />
+  </svg>
+);
 
 // Form Components
 const FormInput: React.FC<
@@ -120,14 +137,27 @@ const statusColors: { [key in Lead["status"]]: string } = {
 const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
   data,
 }) => {
-  const { leads, courses, staff, addLead, updateLead, deleteLead } = data;
+  const {
+    leads,
+    courses,
+    staff,
+    addLead,
+    updateLead,
+    deleteLead,
+    addCommentToLead,
+  } = data;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFormatModalOpen, setIsFormatModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [viewingCommentsForLead, setViewingCommentsForLead] =
+    useState<Lead | null>(null);
+  const [newComment, setNewComment] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const initialFormState: Omit<Lead, "id"> = {
+  const initialFormState: Omit<Lead, "id" | "comments"> & {
+    initialComment?: string;
+  } = {
     name: "",
     email: "",
     phone: "",
@@ -137,14 +167,46 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
     enquiryDate: new Date().toISOString().split("T")[0],
     nextFollowUpDate: "",
     assignedTo: "",
-    comments: "",
+    initialComment: "",
   };
   const [formState, setFormState] = useState(initialFormState);
+
+  useEffect(() => {
+    if (viewingCommentsForLead) {
+      const updatedLeadInList = leads.find(
+        (l) => l.id === viewingCommentsForLead.id
+      );
+      if (updatedLeadInList) {
+        setViewingCommentsForLead(updatedLeadInList);
+      }
+    }
+  }, [leads, viewingCommentsForLead]);
+
+  const getStaffName = (staffId: string) =>
+    staff.find((s) => s.id === staffId)?.name || "System";
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim() || !viewingCommentsForLead) return;
+
+    const authorId =
+      viewingCommentsForLead.assignedTo ||
+      staff.find((s) => s.role === "Counsellor")?.id ||
+      staff[0].id;
+
+    addCommentToLead(viewingCommentsForLead.id, {
+      text: newComment,
+      authorId,
+      timestamp: new Date().toISOString(),
+    });
+
+    setNewComment("");
+  };
 
   const handleOpenModal = (lead: Lead | null = null) => {
     if (lead) {
       setEditingLead(lead);
-      setFormState(lead);
+      setFormState({ ...lead, initialComment: "" });
     } else {
       setEditingLead(null);
       setFormState(initialFormState);
@@ -165,9 +227,27 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
   const handleSubmit = () => {
     if (formState.name && formState.phone && formState.interestedCourseId) {
       if (editingLead) {
-        updateLead(formState as Lead);
+        const { initialComment, ...leadToUpdate } = formState;
+        updateLead(leadToUpdate as Lead);
       } else {
-        addLead(formState);
+        const { initialComment, ...leadData } = formState;
+        const newLead: any = { ...leadData, comments: [] };
+
+        if (initialComment && initialComment.trim()) {
+          const authorId =
+            formState.assignedTo ||
+            staff.find((s) => s.role === "Counsellor")?.id ||
+            staff[0].id;
+          newLead.comments = [
+            {
+              id: `com${Date.now()}`,
+              text: initialComment,
+              authorId,
+              timestamp: new Date().toISOString(),
+            },
+          ];
+        }
+        addLead(newLead);
       }
       handleCloseModal();
     } else {
@@ -187,134 +267,180 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const dataBuffer = e.target?.result;
-      // @ts-ignore
-      const workbook = XLSX.read(dataBuffer, { type: "binary" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      // @ts-ignore
-      const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const dataBuffer = e.target?.result;
+        // @ts-ignore
+        const workbook = XLSX.read(dataBuffer, { type: "binary" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        // @ts-ignore
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-      let successCount = 0;
-      let errorCount = 0;
-      let errors: string[] = [];
+        let successCount = 0;
+        let errorCount = 0;
+        let errors: string[] = [];
 
-      console.log("Importing leads from Excel:", json);
+        json.forEach((row, index) => {
+          const {
+            name,
+            email,
+            phone,
+            interestedCourse,
+            source,
+            status,
+            enquiryDate,
+            comments,
+          } = row;
 
-      json.forEach((row, index) => {
-        const {
-          name,
-          email,
-          phone,
-          interestedCourse,
-          source,
-          status,
-          enquiryDate,
-          comments,
-          assignedTo, // 🆕 New column
-        } = row;
-
-        // ✅ Basic validation
-        if (!name || !phone || !interestedCourse) {
-          errorCount++;
-          errors.push(
-            `Row ${index + 2}: Missing required fields (name, phone, interestedCourse).`
-          );
-          return;
-        }
-
-        // ✅ Find matching course
-        const course = courses.find(
-          (c) =>
-            c.name.toLowerCase() === String(interestedCourse).toLowerCase()
-        );
-        if (!course) {
-          errorCount++;
-          errors.push(
-            `Row ${index + 2}: Course "${interestedCourse}" not found.`
-          );
-          return;
-        }
-
-        // ✅ Find matching user (assignedTo)
-        let assignedToId: number | null = null;
-        if (assignedTo) {
-          const user = staff.find(
-            (u) => u.name.toLowerCase() === String(assignedTo).toLowerCase()
-          );
-          if (user) {
-            assignedToId = Number(user.id); // assumes `staff` have `id` field
-          } else {
+          if (!name || !phone || !interestedCourse) {
+            errorCount++;
             errors.push(
-              `Row ${index + 2}: Assigned user "${assignedTo}" not found.`
+              `Row ${
+                index + 2
+              }: Missing required fields (name, phone, interestedCourse).`
             );
+            return;
           }
-        }
 
-        // ✅ Convert Excel date serials to ISO string
-        let formattedEnquiryDate = new Date().toISOString().split("T")[0];
-        if (enquiryDate) {
-          if (typeof enquiryDate === "number") {
-            const jsDate = new Date((enquiryDate - 25569) * 86400 * 1000);
-            formattedEnquiryDate = jsDate.toISOString().split("T")[0];
-          } else if (typeof enquiryDate === "string") {
-            const parsedDate = new Date(enquiryDate);
-            if (!isNaN(parsedDate.getTime())) {
-              formattedEnquiryDate = parsedDate.toISOString().split("T")[0];
+          const course = courses.find(
+            (c) =>
+              c.name.toLowerCase() === String(interestedCourse).toLowerCase()
+          );
+          if (!course) {
+            errorCount++;
+            errors.push(
+              `Row ${index + 2}: Course "${interestedCourse}" not found.`
+            );
+            return;
+          }
+
+          const parseExcelDate = (excelDate: any) => {
+            if (!excelDate) return new Date().toISOString().split("T")[0];
+
+            // If Excel date comes as number (serial date)
+            if (typeof excelDate === "number") {
+              const date = XLSX.SSF.parse_date_code(excelDate);
+              if (!date) return new Date().toISOString().split("T")[0];
+              const formatted = new Date(date.y, date.m - 1, date.d);
+              return formatted.toISOString().split("T")[0];
             }
-          }
-        }
 
-        // ✅ Build lead object
-        const newLead: Omit<Lead, "id"> = {
-          name,
-          email: email || "",
-          phone: String(phone),
-          interestedCourseId: course.id,
-          source: source || "Other",
-          status: status || "New",
-          enquiryDate: formattedEnquiryDate,
-          comments: comments || "",
-          assignedTo: assignedToId ? String(assignedToId) : undefined, // 🆕 added
-        };
+            // If Excel date comes as string
+            const parsed = new Date(excelDate);
+            if (!isNaN(parsed.getTime())) {
+              return parsed.toISOString().split("T")[0];
+            }
 
-        console.log("Importing lead from row", index + 2, ":", newLead.assignedTo);
-        addLead(newLead);
-        successCount++;
-      });
+            // Fallback
+            return new Date().toISOString().split("T")[0];
+          };
 
-      // ✅ Final summary alert
-      let alertMessage = `${successCount} leads imported successfully.`;
-      if (errorCount > 0) {
-        alertMessage += `\n${errorCount} leads failed to import.\n\nErrors:\n${errors
-          .slice(0, 5)
-          .join("\n")}`;
-        if (errors.length > 5)
-          alertMessage += `\n...and ${errors.length - 5} more errors.`;
+          const newLead: any = {
+            name,
+            email: email || "",
+            phone: String(phone),
+            interestedCourseId: course.id,
+            source: source || "Other",
+            status: status || "New",
+            enquiryDate:
+              parseExcelDate(enquiryDate) ||
+              new Date().toISOString().split("T")[0],
+            comments: [],
+          };
+
+        
+
+          function newComments(commentsData: any): any[] {
+  let commentsArray: any[] = [];
+
+if (typeof commentsData === "string") {
+  const cleanedData = commentsData.replace(/\n\s*/g, " "); // remove line breaks
+  commentsArray = JSON.parse(cleanedData);
+} else if (Array.isArray(commentsData)) {
+  commentsArray = commentsData;
+} else {
+  return [];
+}
+
+  // Step 2: Convert each comment using a loop
+  const comments: any[] = [];
+  for (let i = 0; i < commentsArray.length; i++) {
+    const comment = commentsArray[i];
+
+    // Optional: parse Time string into proper ISO timestamp
+    let timestamp = new Date().toISOString(); // default
+    if (comment.Time) {
+      const regex = /(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?/i;
+      const match = comment.Time.match(regex);
+      if (match) {
+        let [, day, month, year, hours, minutes, seconds, ampm] = match;
+        let h = parseInt(hours, 10);
+        const m = parseInt(minutes, 10);
+        const s = parseInt(seconds, 10);
+        const d = parseInt(day, 10);
+        const mo = parseInt(month, 10) - 1;
+        const y = parseInt(year, 10);
+        if (ampm && ampm.toUpperCase() === "PM" && h < 12) h += 12;
+        if (ampm && ampm.toUpperCase() === "AM" && h === 12) h = 0;
+        const dateObj = new Date(y, mo, d, h, m, s);
+        if (!isNaN(dateObj.getTime())) timestamp = dateObj.toISOString();
+      } else {
+        const dateObj = new Date(comment.Time);
+        if (!isNaN(dateObj.getTime())) timestamp = dateObj.toISOString();
       }
-      alert(alertMessage);
-    } catch (error) {
-      console.error("Error parsing Excel file:", error);
-      alert(
-        "Failed to parse the Excel file. Please ensure it's a valid .xlsx or .xls file."
-      );
     }
-  };
 
-  reader.onerror = (error) => {
-    console.error("Error reading file:", error);
-    alert("Failed to read the file.");
-  };
+    comments.push({
+      id: `com-import-${Date.now()}-${i}`, // unique ID
+      text: comment.Msg?.toString() || "",
+      authorId:
+        staff.find((s) => s.name === comment.User)?.id ||
+        staff[0]?.id ||
+        "system",
+      timestamp,
+    });
+  }
 
-  reader.readAsBinaryString(file);
-  event.target.value = ""; // Reset file input
-};
+  return comments;
+}
+
+//   console.log("comments ", JSON.parse(comments))
+          if (comments) {
+            newLead.comments = newComments(comments)
+          }
+          addLead(newLead);
+          successCount++;
+        });
+
+        let alertMessage = `${successCount} leads imported successfully.`;
+        if (errorCount > 0) {
+          alertMessage += `\n${errorCount} leads failed to import.\n\nErrors:\n${errors
+            .slice(0, 5)
+            .join("\n")}`;
+          if (errors.length > 5)
+            alertMessage += `\n...and ${errors.length - 5} more errors.`;
+        }
+        alert(alertMessage);
+      } catch (error) {
+        console.error("Error parsing Excel file:", error);
+        alert(
+          "Failed to parse the Excel file. Please ensure it's a valid .xlsx or .xls file."
+        );
+      }
+    };
+    reader.onerror = (error) => {
+      console.error("Error reading file:", error);
+      alert("Failed to read the file.");
+    };
+    reader.readAsBinaryString(file);
+
+    event.target.value = ""; // Reset file input
+  };
 
   const handleDownloadSample = () => {
     const sampleData = [
@@ -383,6 +509,7 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
           "Source",
           "Follow-up Date",
           "Status",
+          "Comments",
           "Actions",
         ]}
       >
@@ -406,6 +533,18 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
               >
                 {lead.status}
               </span>
+            </td>
+            <td className="p-3 text-center">
+              <button
+                className="btn btn-sm btn-outline-secondary d-flex align-items-center"
+                onClick={() => {
+                  setViewingCommentsForLead(lead);
+                  setNewComment("");
+                }}
+              >
+                <CommentIcon className="me-1" />
+                <span>{lead.comments?.length || 0}</span>
+              </button>
             </td>
             <td className="p-3">
               <div className="d-flex gap-2">
@@ -516,7 +655,7 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
               <tr>
                 <td>comments</td>
                 <td>No</td>
-                <td>Any additional comments.</td>
+                <td>Any additional comments (will be the first comment).</td>
                 <td>
                   <code>Interested in weekend classes.</code>
                 </td>
@@ -550,6 +689,73 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
           onConfirm={handleDelete}
           onCancel={() => setLeadToDelete(null)}
         />
+      )}
+
+      {viewingCommentsForLead && (
+        <Modal
+          title={`Comments for ${viewingCommentsForLead.name}`}
+          onClose={() => setViewingCommentsForLead(null)}
+          show={!!viewingCommentsForLead}
+        >
+          <div className="d-flex flex-column" style={{ minHeight: "400px" }}>
+            <div
+              className="flex-grow-1 mb-3 border rounded p-2 bg-body-tertiary"
+              style={{ maxHeight: "300px", overflowY: "auto" }}
+            >
+              {viewingCommentsForLead.comments &&
+              Array.isArray(viewingCommentsForLead.comments) &&
+              viewingCommentsForLead.comments.length > 0 ? (
+                [...viewingCommentsForLead.comments]
+                  .reverse()
+                  .map((comment) => (
+                    <div key={comment.id} className="mb-3">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="fw-semibold small">
+                          {getStaffName(comment.authorId)}
+                        </span>
+                        <span className="text-body-secondary small">
+                          {new Date(comment.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                      <div
+                        className="p-2 mt-1 bg-body rounded"
+                        style={{ whiteSpace: "pre-wrap" }}
+                      >
+                        {comment.text}
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <div className="d-flex h-100 align-items-center justify-content-center">
+                  <p className="text-body-secondary">No comments yet.</p>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleCommentSubmit}>
+              <FormTextArea
+                label="Add a New Comment"
+                name="newComment"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Type your comment here..."
+                required
+              />
+              <div className="d-flex justify-content-end pt-3 mt-3 border-top">
+                <button
+                  type="button"
+                  onClick={() => setViewingCommentsForLead(null)}
+                  className="btn btn-secondary me-2"
+                >
+                  Close
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Add Comment
+                </button>
+              </div>
+            </form>
+          </div>
+        </Modal>
       )}
 
       <Modal
@@ -671,10 +877,16 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
               ))}
           </FormSelect>
           <FormTextArea
-            label="Comments"
-            name="comments"
-            value={formState.comments ?? ""}
+            label="Initial Comment"
+            name="initialComment"
+            value={formState.initialComment ?? ""}
             onChange={handleInputChange}
+            placeholder={
+              editingLead
+                ? "Add/view comments via the comment icon"
+                : "Add an initial note..."
+            }
+            disabled={!!editingLead}
           />
           <div className="d-flex justify-content-end pt-3 mt-3 border-top">
             <button
@@ -695,20 +907,3 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
 };
 
 export default LeadsView;
-// const clearSharePointList = async () => {
-//     try {
-//       const list = web.lists.getByTitle("TshapersLead");
-//       const items = await list.items.select("Id").top(5000).get(); // fetch up to 5000
-
-//       for (const item of items) {
-//         console.log("Deleting item with ID:", item.Id);
-//         console.log("Mapped Leads:", leads.length);
-//         await list.items.getById(item.Id).delete();
-//       }
-
-//       alert(✅ Deleted ${items.length} items successfully.);
-//     } catch (error) {
-//       console.error("Error deleting SharePoint list items:", error);
-//       alert("❌ Failed to delete list items.");
-//     }
-//   };

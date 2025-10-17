@@ -1152,7 +1152,7 @@ export const useMockData = () => {
       const res = await web.lists
         .getById('8359e17b-d79e-465d-92c4-2e746ca8a99a')
         .items.select(
-          "Id,Title,email,phone,interestedCourse/Id,source,status,enquiryDate,nextFollowup,assignedTo/Id,assignedTo/Title, comments"
+          "Id,Title,email,phone,interestedCourse/Id,source,status,enquiryDate,nextFollowup,assignedTo/Id,assignedTo/Title,comments"
         )
         .expand("assignedTo", 'interestedCourse')
         .get();
@@ -1167,8 +1167,8 @@ export const useMockData = () => {
           phone: item.phone || "",
           interestedCourseId: String(item.interestedCourse?.Id) || "",//interestedCourseId
           source: item.source || "",
-          status: item.status || "",
-          comments: item.comments || "",
+           status: item.status === 'Follow-Up'? "Follow-up": (item.status === "Not Interested")? "Lost": item.status,
+          comments:  item.comments ? JSON.parse(item.comments) : [], // comment column is multi line of text with JSON data
           enquiryDate: item.enquiryDate
             ? item.enquiryDate.substring(0, 10)
             : "",
@@ -1211,13 +1211,33 @@ export const useMockData = () => {
           comments: newLead.comments || ""            // Optional comments
         });
 
+    await fetchLeads(); // refresh list
+  } catch (error) {
+    console.error("❌ Error adding lead:", error);
+  }
+};
 
-      // Refresh the leads after adding
-      await fetchLeads();
+  const clearSharePointList = async () => {
+    try {
+      const list = web.lists.getByTitle("TshapersLead");
+      const items = await list.items.select("Id").top(5000).get(); // fetch up to 5000
+
+      for (const item of items) {
+        console.log("Deleting item with ID:", item.Id);
+        console.log("Mapped Leads:", leads.length);
+        await list.items.getById(item.Id).delete();
+      }
+
+      alert(`✅ Deleted ${items.length} items successfully.`);
     } catch (error) {
-      console.error("❌ Error adding lead:", error);
+      console.error("Error deleting SharePoint list items:", error);
+      alert("❌ Failed to delete list items.");
     }
   };
+
+  useEffect(() => {
+    clearSharePointList().catch(console.error);
+  }, []);
 
   const updateLead = async (updatedLead: any): Promise<void> => {
     try {
@@ -1236,7 +1256,7 @@ export const useMockData = () => {
           nextFollowup: updatedLead.nextFollowUpDate,
           assignedToId: parseInt(updatedLead.assignedTo),       // Lookup ID
           interestedCourseId: parseInt(updatedLead.interestedCourseId), // Lookup ID
-          comments: updatedLead.comments || ""
+           comments: JSON.stringify(updatedLead.comments || [])
         });
 
 
@@ -1266,6 +1286,75 @@ export const useMockData = () => {
   };
 
 
+  const createId = (prefix: string) => `${prefix}${Date.now()}`;
+  const addCommentToLead = async (leadId: string, commentData: any) => {
+  try {
+
+    const newComment = {
+      id: createId("com"),
+      text: commentData.text,
+      authorId: commentData.authorId,
+      timestamp: new Date().toISOString(),
+    };
+
+    // 🔹 Find current lead in state
+    const currentLead = leads.find((l: any) => l.id === leadId);
+
+    // 🔹 Ensure comments is an array (handle string or empty)
+    let existingComments: any[] = [];
+    if (typeof currentLead?.comments === "string") {
+      try {
+        existingComments = JSON.parse(currentLead.comments);
+      } catch {
+        existingComments = [];
+      }
+    } else if (Array.isArray(currentLead?.comments)) {
+      existingComments = currentLead.comments;
+    }
+
+    // 🔹 Append new comment
+    const updatedComments = [...existingComments, newComment];
+
+    // 🔹 Update SharePoint (multi-line text column)
+    await web.lists
+      .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
+      .items.getById(Number(leadId))
+      .update({
+        comments: JSON.stringify(updatedComments),
+      });
+
+    // 🔹 Update local React state
+    setLeads((prev: any[]) =>
+      prev.map((lead) =>
+        lead.id === leadId ? { ...lead, comments: updatedComments } : lead
+      )
+    );
+  } catch (error) {
+    console.error("❌ Error adding comment:", error);
+  }
+};
+
+
+// const clearSharePointList = async () => {
+//     try {
+//       const list = web.lists.getByTitle("TshapersLead");
+//       const items = await list.items.select("Id").top(5000).get(); // fetch up to 5000
+  
+//       for (const item of items) {
+//         console.log("Deleting item with ID:", item.Id);
+//         console.log("Mapped Leads:", leads.length);
+//         await list.items.getById(item.Id).delete();
+//       }
+
+//       alert(`✅ Deleted ${items.length} items successfully.`);
+//     } catch (error) {
+//       console.error("Error deleting SharePoint list items:", error);
+//       alert("❌ Failed to delete list items.");
+//     }
+//   };
+//   useEffect(() => {
+//     clearSharePointList().catch(console.error);
+//   }, []);
 
   return {
     expensesData,
@@ -1279,6 +1368,7 @@ export const useMockData = () => {
     deleteStaff,
     addLead,
     updateLead,
+    addCommentToLead,
     deleteLead,
     addBatch,
     updateBatch,
