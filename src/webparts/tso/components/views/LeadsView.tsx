@@ -695,20 +695,4 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
 };
 
 export default LeadsView;
-// const clearSharePointList = async () => {
-//     try {
-//       const list = web.lists.getByTitle("TshapersLead");
-//       const items = await list.items.select("Id").top(5000).get(); // fetch up to 5000
 
-//       for (const item of items) {
-//         console.log("Deleting item with ID:", item.Id);
-//         console.log("Mapped Leads:", leads.length);
-//         await list.items.getById(item.Id).delete();
-//       }
-
-//       alert(✅ Deleted ${items.length} items successfully.);
-//     } catch (error) {
-//       console.error("Error deleting SharePoint list items:", error);
-//       alert("❌ Failed to delete list items.");
-//     }
-//   };

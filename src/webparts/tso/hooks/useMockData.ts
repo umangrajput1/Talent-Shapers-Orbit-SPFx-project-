@@ -1190,34 +1190,104 @@ export const useMockData = () => {
 
 
 
-  const addLead = async (newLead: any): Promise<void> => {
-    console.log("Adding new lead:", newLead);
+const addLead = async (newLead: any): Promise<void> => {
+  function parseComments(comments: any): any[] {
+  if (!comments) return [];
+
+  if (typeof comments === "string") {
     try {
-      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+      // Remove line breaks inside JSON string to avoid parse errors
+      const normalized = comments.replace(/[\r\n]+/g, " ");
+      const parsed = JSON.parse(normalized);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // If parsing fails, treat the string as a single comment
+      return [{ Msg: comments, Time: "", User: "" }];
+    }
+  }
 
-      // Add item to SharePoint list
-      await web.lists
-        .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
-        .items.add({
-          Title: newLead.name,                         // Title field
-          email: newLead.email,                        // Email
-          phone: newLead.phone,                        // Phone
-          source: newLead.source,                      // Source
-          status: newLead.status,                      // Status
-          enquiryDate: newLead.enquiryDate,            // Enquiry Date
-          nextFollowup: newLead.enquiryDate,     // Next Followup Date (correct internal name)
-          assignedToId: parseInt(newLead.assignedTo), // ✅ Lookup ID for assignedTo
-          interestedCourseId: parseInt(newLead.interestedCourseId), // Lookup ID for Course
-          comments: newLead.comments || ""            // Optional comments
-        });
+  if (Array.isArray(comments)) return comments;
 
+  return [];
+}
 
-      // Refresh the leads after adding
-      await fetchLeads();
+function formatCommentsToPlainTextWithUser(comments: any[]): string {
+  if (!Array.isArray(comments) || comments.length === 0) return "";
+
+  return comments
+    .map((c) => {
+      if (!c.Msg) return "";
+      // Extract only date part (dd/mm/yyyy) from Time field
+      const datePart = c.Time ? c.Time.split(" ")[0].replace(",", "") : "";
+      // Include user if available
+      const userPart = c.User ? ` (${c.User})` : "";
+      return datePart ? `[${datePart}]: ${c.Msg}${userPart}` : `${c.Msg}${userPart}`;
+    })
+    .join("\n");
+}
+  // Normalize status in one line: "Follow-up (Follow-Up)"
+  function normalizeLeadStatus(status: string): string {
+  if (!status) return "New";
+
+  const formatted = status.trim().toLowerCase();
+
+  switch (formatted) {
+    case "follow-up":
+    case "follow up":
+      return "Follow-up";
+    case "not interested":
+      return "Lost";
+    default:
+      // Capitalize first letter
+      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+}
+
+  console.log("Adding new lead:", newLead);
+
+  try {
+    const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
+
+    await web.lists.getById("8359e17b-d79e-465d-92c4-2e746ca8a99a").items.add({
+      Title: newLead.name,
+      email: newLead.email,
+      phone: newLead.phone,
+      source: newLead.source,
+      status: normalizeLeadStatus(newLead.status),
+      enquiryDate: newLead.enquiryDate,
+      nextFollowup: newLead.enquiryDate || "", // corrected
+      assignedToId: newLead.assignedTo ? parseInt(newLead.assignedTo) : null,
+      interestedCourseId: parseInt(newLead.interestedCourseId),
+      comments: formatCommentsToPlainTextWithUser(parseComments(newLead.comments))
+    });
+
+    await fetchLeads(); // refresh list
+  } catch (error) {
+    console.error("❌ Error adding lead:", error);
+  }
+};
+
+  const clearSharePointList = async () => {
+    try {
+      const list = web.lists.getByTitle("TshapersLead");
+      const items = await list.items.select("Id").top(5000).get(); // fetch up to 5000
+
+      for (const item of items) {
+        console.log("Deleting item with ID:", item.Id);
+        console.log("Mapped Leads:", leads.length);
+        await list.items.getById(item.Id).delete();
+      }
+
+      alert(`✅ Deleted ${items.length} items successfully.`);
     } catch (error) {
-      console.error("❌ Error adding lead:", error);
+      console.error("Error deleting SharePoint list items:", error);
+      alert("❌ Failed to delete list items.");
     }
   };
+
+  useEffect(() => {
+    clearSharePointList().catch(console.error);
+  }, []);
 
   const updateLead = async (updatedLead: any): Promise<void> => {
     try {
