@@ -25,7 +25,8 @@
     "react-dom": "17.0.1",
     "recharts": "^2.7.2",
     "sp-pnp-js": "^3.0.10",
-    "tslib": "2.3.1"
+    "tslib": "2.3.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@microsoft/eslint-config-spfx": "1.21.1",

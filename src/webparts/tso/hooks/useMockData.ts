@@ -1191,6 +1191,7 @@ export const useMockData = () => {
 
 
   const addLead = async (newLead: any): Promise<void> => {
+    console.log("Adding new lead:", newLead);
     try {
       const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
 
@@ -1204,7 +1205,7 @@ export const useMockData = () => {
           source: newLead.source,                      // Source
           status: newLead.status,                      // Status
           enquiryDate: newLead.enquiryDate,            // Enquiry Date
-          nextFollowup: newLead.nextFollowUpDate,     // Next Followup Date (correct internal name)
+          nextFollowup: newLead.enquiryDate,     // Next Followup Date (correct internal name)
           assignedToId: parseInt(newLead.assignedTo), // ✅ Lookup ID for assignedTo
           interestedCourseId: parseInt(newLead.interestedCourseId), // Lookup ID for Course
           comments: newLead.comments || ""            // Optional comments
