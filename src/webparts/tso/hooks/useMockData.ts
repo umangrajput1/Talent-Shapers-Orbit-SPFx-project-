@@ -11,7 +11,6 @@ futureDate.setDate(today.getDate() + 15);
 const veryFutureDate = new Date();
 veryFutureDate.setDate(today.getDate() + 45); // For testing upcoming payments > 30 days
 
-
 export const useMockData = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -96,7 +95,6 @@ export const useMockData = () => {
   }, []);
 
   const addBatch = async (data: Omit<Batch, "id">): Promise<void> => {
-    
     try {
       await web.lists.getById(batcheListId).items.add({
         Title: data.name,
@@ -994,8 +992,6 @@ export const useMockData = () => {
         };
         return lead;
       });
-
-      console.log("mapped lead ", mappedLeads.length)
       setLeads(mappedLeads);
     } catch (error) {
       console.error("Error fetching leads:", error);
