@@ -964,8 +964,6 @@ export const useMockData = () => {
         .expand("assignedTo", "interestedCourse")
         .getAll();
 
-      // console.log("Raw items fetched from SharePoint:", res);
-
       const mappedLeads: Lead[] = res.map((item: any) => {
         const lead = {
           id: item.Id.toString(),
