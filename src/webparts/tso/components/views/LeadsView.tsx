@@ -353,67 +353,69 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
             comments: [],
           };
 
-        
-
           function newComments(commentsData: any): any[] {
-  let commentsArray: any[] = [];
+            let commentsArray: any[] = [];
 
-if (typeof commentsData === "string") {
-  const cleanedData = commentsData.replace(/\n\s*/g, " "); // remove line breaks
-  commentsArray = JSON.parse(cleanedData);
-} else if (Array.isArray(commentsData)) {
-  commentsArray = commentsData;
-} else {
-  return [];
-}
+            if (typeof commentsData === "string") {
+              const cleanedData = commentsData.replace(/\n\s*/g, " "); // remove line breaks
+              commentsArray = JSON.parse(cleanedData);
+            } else if (Array.isArray(commentsData)) {
+              commentsArray = commentsData;
+            } else {
+              return [];
+            }
 
-  // Step 2: Convert each comment using a loop
-  const comments: any[] = [];
-  for (let i = 0; i < commentsArray.length; i++) {
-    const comment = commentsArray[i];
+            // Step 2: Convert each comment using a loop
+            const comments: any[] = [];
+            for (let i = 0; i < commentsArray.length; i++) {
+              const comment = commentsArray[i];
 
-    // Optional: parse Time string into proper ISO timestamp
-    let timestamp = new Date().toISOString(); // default
-    if (comment.Time) {
-      const regex = /(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?/i;
-      const match = comment.Time.match(regex);
-      if (match) {
-        let [, day, month, year, hours, minutes, seconds, ampm] = match;
-        let h = parseInt(hours, 10);
-        const m = parseInt(minutes, 10);
-        const s = parseInt(seconds, 10);
-        const d = parseInt(day, 10);
-        const mo = parseInt(month, 10) - 1;
-        const y = parseInt(year, 10);
-        if (ampm && ampm.toUpperCase() === "PM" && h < 12) h += 12;
-        if (ampm && ampm.toUpperCase() === "AM" && h === 12) h = 0;
-        const dateObj = new Date(y, mo, d, h, m, s);
-        if (!isNaN(dateObj.getTime())) timestamp = dateObj.toISOString();
-      } else {
-        const dateObj = new Date(comment.Time);
-        if (!isNaN(dateObj.getTime())) timestamp = dateObj.toISOString();
-      }
-    }
+              // Optional: parse Time string into proper ISO timestamp
+              let timestamp = new Date().toISOString(); // default
+              if (comment.Time) {
+                const regex =
+                  /(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?/i;
+                const match = comment.Time.match(regex);
+                if (match) {
+                  let [, day, month, year, hours, minutes, seconds, ampm] =
+                    match;
+                  let h = parseInt(hours, 10);
+                  const m = parseInt(minutes, 10);
+                  const s = parseInt(seconds, 10);
+                  const d = parseInt(day, 10);
+                  const mo = parseInt(month, 10) - 1;
+                  const y = parseInt(year, 10);
+                  if (ampm && ampm.toUpperCase() === "PM" && h < 12) h += 12;
+                  if (ampm && ampm.toUpperCase() === "AM" && h === 12) h = 0;
+                  const dateObj = new Date(y, mo, d, h, m, s);
+                  if (!isNaN(dateObj.getTime()))
+                    timestamp = dateObj.toISOString();
+                } else {
+                  const dateObj = new Date(comment.Time);
+                  if (!isNaN(dateObj.getTime()))
+                    timestamp = dateObj.toISOString();
+                }
+              }
 
-    comments.push({
-      id: `com-import-${Date.now()}-${i}`, // unique ID
-      text: comment.Msg?.toString() || "",
-      authorId:
-        staff.find((s) => s.name === comment.User)?.id ||
-        staff[0]?.id ||
-        "system",
-      timestamp,
-    });
-  }
+              comments.push({
+                id: `com-import-${Date.now()}-${i}`, // unique ID
+                text: comment.Msg?.toString() || "",
+                authorId:
+                  staff.find((s) => s.name === comment.User)?.id ||
+                  staff[0]?.id ||
+                  "system",
+                timestamp,
+              });
+            }
 
-  return comments;
-}
-
-//   console.log("comments ", JSON.parse(comments))
-          if (comments) {
-            newLead.comments = newComments(comments)
+            return comments;
           }
-          console.log("addeddd call.....")
+
+          //   console.log("comments ", JSON.parse(comments))
+          if (comments) {
+            newLead.comments = newComments(comments);
+          }
+          console.log("addeddd call.....");
           addLead(newLead);
           successCount++;
         });

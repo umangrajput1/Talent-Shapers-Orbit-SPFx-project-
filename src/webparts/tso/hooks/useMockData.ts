@@ -15,7 +15,6 @@ veryFutureDate.setDate(today.getDate() + 45); // For testing upcoming payments >
 export const useMockData = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
-  // const [trainers, setTrainers] = useState<any[]>([]);
   const [feePayments, setFeePayments] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [expenses, setExpenseData] = useState<any[]>([]);
@@ -136,9 +135,6 @@ export const useMockData = () => {
       console.error("Error updating batch:", error);
     }
     await fetchBatches();
-    // setBatches((prev) =>
-    //   prev.map((b) => (b.id === updatedBatch.id ? updatedBatch : b))
-    // );
   };
   const deleteBatch = async (batchId: string): Promise<any> => {
     try {
@@ -150,12 +146,6 @@ export const useMockData = () => {
       console.error("Error deleting batch:", error);
     }
     await fetchBatches();
-    // setBatches((prev) => prev.filter((b) => b.id !== batchId));
-    // Also remove this batch from any students
-    // setStudents(prevStudents => prevStudents.map(s => ({
-    //     ...s,
-    //     batchIds: s.batchIds?.filter((id:any) => id !== batchId)
-    // })));
   };
 
   // fetch staff added
@@ -420,22 +410,6 @@ export const useMockData = () => {
 
   // assignment
 
-  // 🔹 Upload attachment to SharePoint list item
-  // const uploadAttachment = async (itemId: number, file: File, listId: string) => {
-  //   const list = web.lists.getById(listId);
-
-  //   // Delete old attachments first (to overwrite)
-  //   const existingAttachments = await list.items.getById(itemId).attachmentFiles.get();
-  //   for (const f of existingAttachments) {
-  //     await list.items.getById(itemId).attachmentFiles.getByName(f.FileName).delete();
-  //   }
-
-  //   // Add new attachment
-  //   const buffer = await file.arrayBuffer();
-  //   const uploaded = await list.items.getById(itemId).attachmentFiles.add(file.name, buffer);
-  //   return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
-  // };
-
   // 🔹 CREATE
   const addAssignment = async (assignment: any) => {
     try {
@@ -654,168 +628,6 @@ export const useMockData = () => {
     }
   };
 
-  // // trainer model
-  // useEffect(() => {
-  //   const getTrainers = async (): Promise<void> => {
-  //     try {
-  //       const list = await web.lists
-  //         .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-  //         .items.select(
-  //           "Id,Title,FullName,Email,Phone,Gender,Address,Expertise/Id,Expertise/Title,Attachments"
-  //         )
-  //         .expand("Expertise")
-  //         .get();
-
-  //       const formatted = await Promise.all(
-  //         list.map(async (item: any) => {
-  //           // Get attachments if any
-  //           const attachments = item.Attachments
-  //             ? await web.lists
-  //               .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-  //               .items.getById(item.Id)
-  //               .attachmentFiles.get()
-  //             : [];
-
-  //           // Take first attachment as profile picture (if multiple)
-  //           const imageUrl =
-  //             attachments.length > 0
-  //               ? `${window.location.origin}${attachments[0].ServerRelativeUrl}`
-  //               : "";
-
-  //           return {
-  //             id: item.Id.toString(),
-  //             name: item.FullName,
-  //             email: item.Email,
-  //             phone: item.Phone,
-  //             address: item.Address,
-  //             gender: item.Gender,
-  //             imageUrl,
-  //             expertise: item.Expertise.map((ex: any) => ex.Id.toString()),
-  //             attachments, // store all attachments
-  //           };
-  //         })
-  //       );
-
-  //       setTrainers(formatted);
-  //     } catch (err) {
-  //       console.error("Error fetching trainers:", err);
-  //     }
-  //   };
-
-  //   getTrainers();
-  // }, []);
-
-  // const uploadTrainerAttachment = async (itemId: number, file: File) => {
-  //   // Delete old attachment if exists
-  //   const attachments = await web.lists
-  //     .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-  //     .items.getById(itemId)
-  //     .attachmentFiles.get();
-
-  //   for (const f of attachments) {
-  //     await web.lists
-  //       .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-  //       .items.getById(itemId)
-  //       .attachmentFiles.getByName(f.FileName)
-  //       .delete();
-  //   }
-
-  //   // Add new attachment
-  //   const buffer = await file.arrayBuffer();
-  //   const uploaded = await web.lists
-  //     .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-  //     .items.getById(itemId)
-  //     .attachmentFiles.add(file.name, buffer);
-
-  //   return `${window.location.origin}${uploaded.data.ServerRelativeUrl}`;
-  // };
-
-  // // 🔹 Add a new trainer
-  // const addTrainer = async (trainer: any) => {
-  //   try {
-  //     const item = await web.lists
-  //       .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-  //       .items.add({
-  //         Title: trainer.name,
-  //         FullName: trainer.name,
-  //         Email: trainer.email,
-  //         Phone: trainer.phone,
-  //         Address: trainer.address,
-  //         Gender: trainer.gender,
-  //         ExpertiseId: {
-  //           results: trainer.expertise.map((id: any) => parseInt(id)),
-  //         },
-  //       });
-
-  //     let imageUrl = "";
-  //     if (trainer.imageFile) {
-  //       imageUrl = await uploadTrainerAttachment(
-  //         item.data.Id,
-  //         trainer.imageFile
-  //       );
-  //     }
-
-  //     const newTrainer = {
-  //       ...trainer,
-  //       id: item.data.Id.toString(),
-  //       imageUrl,
-  //     };
-  //     setTrainers([...trainers, newTrainer]);
-  //   } catch (err) {
-  //     console.error("Error adding trainer:", err);
-  //   }
-  // };
-  // // 🔹 Update trainer
-  // const updateTrainer = async (trainer: any): Promise<void> => {
-  //   try {
-  //     await web.lists
-  //       .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-  //       .items.getById(parseInt(trainer.id))
-  //       .update({
-  //         FullName: trainer.name,
-  //         Email: trainer.email,
-  //         Phone: trainer.phone,
-  //         Address: trainer.address,
-  //         Gender: trainer.gender,
-  //         ExpertiseId: {
-  //           results: trainer.expertise.map((id: any) => parseInt(id)),
-  //         },
-  //       });
-
-  //     let imageUrl = trainer.imageUrl || "";
-  //     if (trainer.imageFile) {
-  //       imageUrl = await uploadTrainerAttachment(
-  //         parseInt(trainer.id),
-  //         trainer.imageFile
-  //       );
-  //     }
-
-  //     const updatedTrainer = {
-  //       ...trainer,
-  //       imageUrl,
-  //     };
-
-  //     setTrainers(
-  //       trainers.map((t) => (t.id === trainer.id ? updatedTrainer : t))
-  //     );
-  //   } catch (err) {
-  //     console.error("Error updating trainer:", err);
-  //   }
-  // };
-
-  // // 🔹 Delete trainer
-  // const deleteTrainer = async (id: string): Promise<void> => {
-  //   try {
-  //     await web.lists
-  //       .getById("ed766b42-ed7b-4f73-874e-ed69f7f44975")
-  //       .items.getById(parseInt(id))
-  //       .delete();
-
-  //     setTrainers(trainers.filter((t) => t.id !== id));
-  //   } catch (err) {
-  //     console.error("Error deleting trainer:", err);
-  //   }
-  // };
   /// gajendra  data
 
   const sanitizeUrl = (url?: string) => {
@@ -1152,7 +964,7 @@ export const useMockData = () => {
           "Id,Title,email,phone,interestedCourse/Id,source,status,enquiryDate,nextFollowup,assignedTo/Id,assignedTo/Title,comments"
         )
         .expand("assignedTo", "interestedCourse")
-        .get();
+        .getAll();
 
       // console.log("Raw items fetched from SharePoint:", res);
 
@@ -1183,6 +995,7 @@ export const useMockData = () => {
         return lead;
       });
 
+      console.log("mapped lead ", mappedLeads.length)
       setLeads(mappedLeads);
     } catch (error) {
       console.error("Error fetching leads:", error);
@@ -1190,7 +1003,6 @@ export const useMockData = () => {
   };
 
   const addLead = async (newLead: any): Promise<void> => {
-    console.log("Adding new lead:", newLead);
     try {
       const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
 
@@ -1204,7 +1016,7 @@ export const useMockData = () => {
           source: newLead.source, // Source
           status: newLead.status, // Status
           enquiryDate: newLead.enquiryDate, // Enquiry Date
-          nextFollowup: newLead.enquiryDate, // Next Followup Date (correct internal name)
+          nextFollowup: newLead.nextFollowUpDate, // Next Followup Date (correct internal name)
           assignedToId: parseInt(newLead.assignedTo), // ✅ Lookup ID for assignedTo
           interestedCourseId: parseInt(newLead.interestedCourseId), // Lookup ID for Course
           comments: Array.isArray(newLead.comments)
@@ -1217,28 +1029,6 @@ export const useMockData = () => {
       console.error("❌ Error adding lead:", error);
     }
   };
-
-  // const clearSharePointList = async () => {
-  //   try {
-  //     const list = web.lists.getByTitle("TshapersLead");
-  //     const items = await list.items.select("Id").top(5000).get(); // fetch up to 5000
-
-  //     for (const item of items) {
-  //       console.log("Deleting item with ID:", item.Id);
-  //       console.log("Mapped Leads:", leads.length);
-  //       await list.items.getById(item.Id).delete();
-  //     }
-
-  //     alert(`✅ Deleted ${items.length} items successfully.`);
-  //   } catch (error) {
-  //     console.error("Error deleting SharePoint list items:", error);
-  //     alert("❌ Failed to delete list items.");
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   clearSharePointList().catch(console.error);
-  // }, []);
 
   const updateLead = async (updatedLead: any): Promise<void> => {
     try {
