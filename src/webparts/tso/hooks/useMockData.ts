@@ -97,7 +97,7 @@ export const useMockData = () => {
   }, []);
 
   const addBatch = async (data: Omit<Batch, "id">): Promise<void> => {
-
+    
     try {
       await web.lists.getById(batcheListId).items.add({
         Title: data.name,
@@ -289,8 +289,6 @@ export const useMockData = () => {
     }
     await fetchStaff();
   };
-
-
 
   // expenses
 
@@ -620,8 +618,8 @@ export const useMockData = () => {
     } catch (err) {
       console.error("Error adding fee payment:", err);
     }
-  }
-  
+  };
+
   // Update Fee Payment
   const updateFeePayment = async (updatedPayment: any) => {
     try {
@@ -1071,7 +1069,6 @@ export const useMockData = () => {
         .items.getById(Number(studentId))
         .delete();
 
-
       await fetchAPIStudent();
 
       return { success: true };
@@ -1147,14 +1144,14 @@ export const useMockData = () => {
 
   const fetchLeads = async (): Promise<void> => {
     try {
-      const web = new Web('https://smalsusinfolabs.sharepoint.com/sites/TSO');
+      const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
 
       const res = await web.lists
-        .getById('8359e17b-d79e-465d-92c4-2e746ca8a99a')
+        .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
         .items.select(
           "Id,Title,email,phone,interestedCourse/Id,source,status,enquiryDate,nextFollowup,assignedTo/Id,assignedTo/Title,comments"
         )
-        .expand("assignedTo", 'interestedCourse')
+        .expand("assignedTo", "interestedCourse")
         .get();
 
       // console.log("Raw items fetched from SharePoint:", res);
@@ -1165,14 +1162,19 @@ export const useMockData = () => {
           name: item.Title,
           email: item.email || "",
           phone: item.phone || "",
-          interestedCourseId: String(item.interestedCourse?.Id) || "",//interestedCourseId
+          interestedCourseId: String(item.interestedCourse?.Id) || "", //interestedCourseId
           source: item.source || "",
-           status: item.status === 'Follow-Up'? "Follow-up": (item.status === "Not Interested")? "Lost": item.status,
-          comments:  item.comments ? JSON.parse(item.comments) : [], // comment column is multi line of text with JSON data
+          status:
+            item.status === "Follow-Up"
+              ? "Follow-up"
+              : item.status === "Not Interested"
+              ? "Lost"
+              : item.status,
+          comments: item.comments ? JSON.parse(item.comments) : [], // comment column is multi line of text with JSON data
           enquiryDate: item.enquiryDate
             ? item.enquiryDate.substring(0, 10)
             : "",
-          nextFollowUpDate: item.nextFollowup   // ✅ Correct internal name
+          nextFollowUpDate: item.nextFollowup // ✅ Correct internal name
             ? item.nextFollowup.substring(0, 10)
             : "",
           assignedTo: item.assignedTo ? String(item.assignedTo.Id) : "", // ✅ Lookup ID
@@ -1182,13 +1184,10 @@ export const useMockData = () => {
       });
 
       setLeads(mappedLeads);
-
     } catch (error) {
       console.error("Error fetching leads:", error);
     }
   };
-
-
 
   const addLead = async (newLead: any): Promise<void> => {
     console.log("Adding new lead:", newLead);
@@ -1199,25 +1198,25 @@ export const useMockData = () => {
       await web.lists
         .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
         .items.add({
-          Title: newLead.name,                         // Title field
-          email: newLead.email,                        // Email
-          phone: newLead.phone,                        // Phone
-          source: newLead.source,                      // Source
-          status: newLead.status,                      // Status
-          enquiryDate: newLead.enquiryDate,            // Enquiry Date
-          nextFollowup: newLead.enquiryDate,     // Next Followup Date (correct internal name)
+          Title: newLead.name, // Title field
+          email: newLead.email, // Email
+          phone: newLead.phone, // Phone
+          source: newLead.source, // Source
+          status: newLead.status, // Status
+          enquiryDate: newLead.enquiryDate, // Enquiry Date
+          nextFollowup: newLead.enquiryDate, // Next Followup Date (correct internal name)
           assignedToId: parseInt(newLead.assignedTo), // ✅ Lookup ID for assignedTo
           interestedCourseId: parseInt(newLead.interestedCourseId), // Lookup ID for Course
           comments: Array.isArray(newLead.comments)
-  ? JSON.stringify(newLead.comments)
-  : newLead.comments || ""           // Optional comments
+            ? JSON.stringify(newLead.comments)
+            : newLead.comments || "", // Optional comments
         });
 
-    await fetchLeads(); // refresh list
-  } catch (error) {
-    console.error("❌ Error adding lead:", error);
-  }
-};
+      await fetchLeads(); // refresh list
+    } catch (error) {
+      console.error("❌ Error adding lead:", error);
+    }
+  };
 
   // const clearSharePointList = async () => {
   //   try {
@@ -1256,11 +1255,10 @@ export const useMockData = () => {
           status: updatedLead.status,
           enquiryDate: updatedLead.enquiryDate,
           nextFollowup: updatedLead.nextFollowUpDate,
-          assignedToId: parseInt(updatedLead.assignedTo),       // Lookup ID
+          assignedToId: parseInt(updatedLead.assignedTo), // Lookup ID
           interestedCourseId: parseInt(updatedLead.interestedCourseId), // Lookup ID
-           comments: JSON.stringify(updatedLead.comments || [])
+          comments: JSON.stringify(updatedLead.comments || []),
         });
-
 
       // Refresh leads
       await fetchLeads();
@@ -1268,7 +1266,6 @@ export const useMockData = () => {
       console.error("❌ Error updating lead:", error);
     }
   };
-
 
   const deleteLead = async (leadId: string): Promise<void> => {
     try {
@@ -1279,7 +1276,6 @@ export const useMockData = () => {
         .items.getById(parseInt(leadId))
         .delete();
 
-
       // Refresh leads
       await fetchLeads();
     } catch (error) {
@@ -1287,55 +1283,52 @@ export const useMockData = () => {
     }
   };
 
-
   const createId = (prefix: string) => `${prefix}${Date.now()}`;
   const addCommentToLead = async (leadId: string, commentData: any) => {
-  try {
+    try {
+      const newComment = {
+        id: createId("com"),
+        text: commentData.text,
+        authorId: commentData.authorId,
+        timestamp: new Date().toISOString(),
+      };
 
-    const newComment = {
-      id: createId("com"),
-      text: commentData.text,
-      authorId: commentData.authorId,
-      timestamp: new Date().toISOString(),
-    };
+      // 🔹 Find current lead in state
+      const currentLead = leads.find((l: any) => l.id === leadId);
 
-    // 🔹 Find current lead in state
-    const currentLead = leads.find((l: any) => l.id === leadId);
-
-    // 🔹 Ensure comments is an array (handle string or empty)
-    let existingComments: any[] = [];
-    if (typeof currentLead?.comments === "string") {
-      try {
-        existingComments = JSON.parse(currentLead.comments);
-      } catch {
-        existingComments = [];
+      // 🔹 Ensure comments is an array (handle string or empty)
+      let existingComments: any[] = [];
+      if (typeof currentLead?.comments === "string") {
+        try {
+          existingComments = JSON.parse(currentLead.comments);
+        } catch {
+          existingComments = [];
+        }
+      } else if (Array.isArray(currentLead?.comments)) {
+        existingComments = currentLead.comments;
       }
-    } else if (Array.isArray(currentLead?.comments)) {
-      existingComments = currentLead.comments;
+
+      // 🔹 Append new comment
+      const updatedComments = [...existingComments, newComment];
+
+      // 🔹 Update SharePoint (multi-line text column)
+      await web.lists
+        .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
+        .items.getById(Number(leadId))
+        .update({
+          comments: JSON.stringify(updatedComments),
+        });
+
+      // 🔹 Update local React state
+      setLeads((prev: any[]) =>
+        prev.map((lead) =>
+          lead.id === leadId ? { ...lead, comments: updatedComments } : lead
+        )
+      );
+    } catch (error) {
+      console.error("❌ Error adding comment:", error);
     }
-
-    // 🔹 Append new comment
-    const updatedComments = [...existingComments, newComment];
-
-    // 🔹 Update SharePoint (multi-line text column)
-    await web.lists
-      .getById("8359e17b-d79e-465d-92c4-2e746ca8a99a")
-      .items.getById(Number(leadId))
-      .update({
-        comments: JSON.stringify(updatedComments),
-      });
-
-    // 🔹 Update local React state
-    setLeads((prev: any[]) =>
-      prev.map((lead) =>
-        lead.id === leadId ? { ...lead, comments: updatedComments } : lead
-      )
-    );
-  } catch (error) {
-    console.error("❌ Error adding comment:", error);
-  }
-};
-
+  };
 
   return {
     expensesData,
