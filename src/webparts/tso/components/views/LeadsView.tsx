@@ -410,12 +410,9 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
 
             return comments;
           }
-
-          //   console.log("comments ", JSON.parse(comments))
           if (comments) {
             newLead.comments = newComments(comments);
           }
-          console.log("addeddd call.....");
           addLead(newLead);
           successCount++;
         });

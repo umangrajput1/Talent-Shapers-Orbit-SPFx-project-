@@ -117,8 +117,6 @@ const FeesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
   };
   const [formState, setFormState] = useState(initialFormState);
 
-  console.log("FeePayments:", feePayments);
-  console.log("Students:", students);
   const getStudentName = (studentId: string) => {
     return students.find((s) => s.id === studentId)?.name || "Unknown Student";
   };
