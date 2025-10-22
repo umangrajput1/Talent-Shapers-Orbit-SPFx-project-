@@ -1208,7 +1208,9 @@ export const useMockData = () => {
           nextFollowup: newLead.enquiryDate,     // Next Followup Date (correct internal name)
           assignedToId: parseInt(newLead.assignedTo), // ✅ Lookup ID for assignedTo
           interestedCourseId: parseInt(newLead.interestedCourseId), // Lookup ID for Course
-          comments: newLead.comments || ""            // Optional comments
+          comments: Array.isArray(newLead.comments)
+  ? JSON.stringify(newLead.comments)
+  : newLead.comments || ""           // Optional comments
         });
 
     await fetchLeads(); // refresh list
@@ -1217,27 +1219,27 @@ export const useMockData = () => {
   }
 };
 
-  const clearSharePointList = async () => {
-    try {
-      const list = web.lists.getByTitle("TshapersLead");
-      const items = await list.items.select("Id").top(5000).get(); // fetch up to 5000
+  // const clearSharePointList = async () => {
+  //   try {
+  //     const list = web.lists.getByTitle("TshapersLead");
+  //     const items = await list.items.select("Id").top(5000).get(); // fetch up to 5000
 
-      for (const item of items) {
-        console.log("Deleting item with ID:", item.Id);
-        console.log("Mapped Leads:", leads.length);
-        await list.items.getById(item.Id).delete();
-      }
+  //     for (const item of items) {
+  //       console.log("Deleting item with ID:", item.Id);
+  //       console.log("Mapped Leads:", leads.length);
+  //       await list.items.getById(item.Id).delete();
+  //     }
 
-      alert(`✅ Deleted ${items.length} items successfully.`);
-    } catch (error) {
-      console.error("Error deleting SharePoint list items:", error);
-      alert("❌ Failed to delete list items.");
-    }
-  };
+  //     alert(`✅ Deleted ${items.length} items successfully.`);
+  //   } catch (error) {
+  //     console.error("Error deleting SharePoint list items:", error);
+  //     alert("❌ Failed to delete list items.");
+  //   }
+  // };
 
-  useEffect(() => {
-    clearSharePointList().catch(console.error);
-  }, []);
+  // useEffect(() => {
+  //   clearSharePointList().catch(console.error);
+  // }, []);
 
   const updateLead = async (updatedLead: any): Promise<void> => {
     try {
@@ -1334,27 +1336,6 @@ export const useMockData = () => {
   }
 };
 
-
-// const clearSharePointList = async () => {
-//     try {
-//       const list = web.lists.getByTitle("TshapersLead");
-//       const items = await list.items.select("Id").top(5000).get(); // fetch up to 5000
-  
-//       for (const item of items) {
-//         console.log("Deleting item with ID:", item.Id);
-//         console.log("Mapped Leads:", leads.length);
-//         await list.items.getById(item.Id).delete();
-//       }
-
-//       alert(`✅ Deleted ${items.length} items successfully.`);
-//     } catch (error) {
-//       console.error("Error deleting SharePoint list items:", error);
-//       alert("❌ Failed to delete list items.");
-//     }
-//   };
-//   useEffect(() => {
-//     clearSharePointList().catch(console.error);
-//   }, []);
 
   return {
     expensesData,

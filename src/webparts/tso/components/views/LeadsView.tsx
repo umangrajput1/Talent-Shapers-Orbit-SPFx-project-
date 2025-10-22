@@ -413,6 +413,7 @@ if (typeof commentsData === "string") {
           if (comments) {
             newLead.comments = newComments(comments)
           }
+          console.log("addeddd call.....")
           addLead(newLead);
           successCount++;
         });
