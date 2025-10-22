@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 interface ModalProps {
   title: string;
@@ -10,14 +10,14 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({ title, onClose, children, show }) => {
   React.useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         onClose();
       }
     };
     if (show) {
-      window.addEventListener('keydown', handleEsc);
+      window.addEventListener("keydown", handleEsc);
     }
-    return () => window.removeEventListener('keydown', handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, [show, onClose]);
 
   if (!show) {
@@ -27,30 +27,28 @@ const Modal: React.FC<ModalProps> = ({ title, onClose, children, show }) => {
   return (
     <>
       <div className="modal-backdrop fade show"></div>
-      <div 
+      <div
         className="modal fade show"
-        style={{ display: 'block' }}
+        style={{ display: "block" }}
         aria-modal="true"
         role="dialog"
         onClick={onClose}
       >
-        <div 
-          className="modal-dialog modal-dialog-centered modal-dialog-scrollable"
-          onClick={e => e.stopPropagation()}
+        <div
+          className="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl"
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">{title}</h5>
-              <button 
+              <button
                 type="button"
-                className="btn-close" 
-                onClick={onClose} 
+                className="btn-close"
+                onClick={onClose}
                 aria-label="Close"
               ></button>
             </div>
-            <div className="modal-body">
-              {children}
-            </div>
+            <div className="modal-body">{children}</div>
           </div>
         </div>
       </div>
