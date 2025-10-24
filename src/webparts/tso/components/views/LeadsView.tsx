@@ -761,150 +761,168 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
         </Modal>
       )}
 
-      <Modal
-        show={isModalOpen}
-        title={editingLead ? "Edit Lead" : "Add New Lead"}
-        onClose={handleCloseModal}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSubmit();
-          }}
+<Modal
+  show={isModalOpen}
+  title={editingLead ? "Edit Lead" : "Add New Lead"}
+  onClose={handleCloseModal}
+>
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
+      handleSubmit();
+    }}
+    style={{
+      // Removed scrolling limits
+      maxHeight: "none",
+      overflow: "visible",
+    }}
+  >
+    {/* 3 boxes per row */}
+    <div className="row g-3">
+      <div className="col-md-4">
+        <FormInput
+          label="Full Name"
+          name="name"
+          value={formState.name}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="col-md-4">
+        <FormInput
+          label="Email"
+          name="email"
+          type="email"
+          value={formState.email ?? ""}
+          onChange={handleInputChange}
+        />
+      </div>
+      <div className="col-md-4">
+        <FormInput
+          label="Phone"
+          name="phone"
+          type="tel"
+          value={formState.phone}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+
+      <div className="col-md-4">
+        <FormSelect
+          label="Interested Course"
+          name="interestedCourseId"
+          value={formState.interestedCourseId}
+          onChange={handleInputChange}
+          required
         >
-          <FormInput
-            label="Full Name"
-            name="name"
-            value={formState.name}
-            onChange={handleInputChange}
-            required
-          />
-          <div className="row">
-            <div className="col-md-6">
-              <FormInput
-                label="Email"
-                name="email"
-                type="email"
-                value={formState.email ?? ""}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <FormInput
-                label="Phone"
-                name="phone"
-                type="tel"
-                value={formState.phone}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          </div>
-          <FormSelect
-            label="Interested Course"
-            name="interestedCourseId"
-            value={formState.interestedCourseId}
-            onChange={handleInputChange}
-            required
-          >
-            <option value="">Select a course</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+          <option value="">Select a course</option>
+          {courses.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </FormSelect>
+      </div>
+
+      <div className="col-md-4">
+        <FormSelect
+          label="Source"
+          name="source"
+          value={formState.source}
+          onChange={handleInputChange}
+        >
+          <option>Walk-in</option>
+          <option>Website</option>
+          <option>Referral</option>
+          <option>Social Media</option>
+          <option>Other</option>
+        </FormSelect>
+      </div>
+
+      <div className="col-md-4">
+        <FormSelect
+          label="Status"
+          name="status"
+          value={formState.status}
+          onChange={handleInputChange}
+        >
+          <option>New</option>
+          <option>Contacted</option>
+          <option>Follow-up</option>
+          <option>Converted</option>
+          <option>Lost</option>
+        </FormSelect>
+      </div>
+
+      <div className="col-md-4">
+        <FormInput
+          label="Enquiry Date"
+          name="enquiryDate"
+          type="date"
+          value={formState.enquiryDate}
+          onChange={handleInputChange}
+        />
+      </div>
+
+      <div className="col-md-4">
+        <FormInput
+          label="Next Follow-up"
+          name="nextFollowUpDate"
+          type="date"
+          value={formState.nextFollowUpDate ?? ""}
+          onChange={handleInputChange}
+        />
+      </div>
+
+      <div className="col-md-4">
+        <FormSelect
+          label="Assigned To"
+          name="assignedTo"
+          value={formState.assignedTo ?? ""}
+          onChange={handleInputChange}
+        >
+          <option value="">Assign to staff...</option>
+          {staff
+            .filter((s) => s.role === "Counsellor" || s.role === "Sales")
+            .map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
               </option>
             ))}
-          </FormSelect>
-          <div className="row">
-            <div className="col-md-6">
-              <FormSelect
-                label="Source"
-                name="source"
-                value={formState.source}
-                onChange={handleInputChange}
-              >
-                <option>Walk-in</option>
-                <option>Website</option>
-                <option>Referral</option>
-                <option>Social Media</option>
-                <option>Other</option>
-              </FormSelect>
-            </div>
-            <div className="col-md-6">
-              <FormSelect
-                label="Status"
-                name="status"
-                value={formState.status}
-                onChange={handleInputChange}
-              >
-                <option>New</option>
-                <option>Contacted</option>
-                <option>Follow-up</option>
-                <option>Converted</option>
-                <option>Lost</option>
-              </FormSelect>
-            </div>
-          </div>
-          <div className="row">
-            <div className="col-md-6">
-              <FormInput
-                label="Enquiry Date"
-                name="enquiryDate"
-                type="date"
-                value={formState.enquiryDate}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <FormInput
-                label="Next Follow-up"
-                name="nextFollowUpDate"
-                type="date"
-                value={formState.nextFollowUpDate ?? ""}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-          <FormSelect
-            label="Assigned To"
-            name="assignedTo"
-            value={formState.assignedTo ?? ""}
-            onChange={handleInputChange}
-          >
-            <option value="">Assign to staff...</option>
-            {staff
-              .filter((s) => s.role === "Counsellor" || s.role === "Sales")
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-          </FormSelect>
-          <FormTextArea
-            label="Initial Comment"
-            name="initialComment"
-            value={formState.initialComment ?? ""}
-            onChange={handleInputChange}
-            placeholder={
-              editingLead
-                ? "Add/view comments via the comment icon"
-                : "Add an initial note..."
-            }
-            disabled={!!editingLead}
-          />
-          <div className="d-flex justify-content-end pt-3 mt-3 border-top">
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="btn btn-secondary me-2"
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary">
-              {editingLead ? "Save Changes" : "Add Lead"}
-            </button>
-          </div>
-        </form>
-      </Modal>
+        </FormSelect>
+      </div>
+
+      <div className="col-12">
+        <FormTextArea
+          label="Initial Comment"
+          name="initialComment"
+          value={formState.initialComment ?? ""}
+          onChange={handleInputChange}
+          placeholder={
+            editingLead
+              ? "Add/view comments via the comment icon"
+              : "Add an initial note..."
+          }
+          disabled={!!editingLead}
+        />
+      </div>
+    </div>
+
+    <div className="d-flex justify-content-end pt-3 mt-3 border-top">
+      <button
+        type="button"
+        onClick={handleCloseModal}
+        className="btn btn-secondary me-2"
+      >
+        Cancel
+      </button>
+      <button type="submit" className="btn btn-primary">
+        {editingLead ? "Save Changes" : "Add Lead"}
+      </button>
+    </div>
+  </form>
+</Modal>
     </div>
   );
 };

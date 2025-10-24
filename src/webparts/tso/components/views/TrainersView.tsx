@@ -268,208 +268,223 @@ const StaffView: React.FC<StaffViewProps> = ({ data, onViewProfile }) => {
           onCancel={() => setStaffToDelete(null)}
         />
       )}
+<Modal
+  show={isModalOpen}
+  title={editingStaff ? "Edit Staff Member" : "Add New Staff Member"}
+  onClose={handleCloseModal}
+>
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
+      handleSubmit();
+    }}
+    style={{
+    maxHeight: "75vh",
+    overflowY: "auto",
+    overflowX: "hidden", // prevent horizontal scroll
+    paddingRight: "15px", // optional: avoid cutting off content
+  }}
+  >
+    <div className="row g-3">
+      <div className="col-md-4">
+        <FormInput
+          label="Full Name"
+          name="name"
+          value={formState.name}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="col-md-4">
+        <FormInput
+          label="Email Address"
+          name="email"
+          type="email"
+          value={formState.email}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+      <div className="col-md-4">
+        <FormInput
+          label="Phone Number"
+          name="phone"
+          type="tel"
+          value={formState.phone}
+          onChange={handleInputChange}
+        />
+      </div>
 
-      <Modal
-        show={isModalOpen}
-        title={editingStaff ? "Edit Staff Member" : "Add New Staff Member"}
-        onClose={handleCloseModal}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSubmit();
-          }}
+      <div className="col-md-4">
+        <FormSelect
+          label="Role"
+          name="role"
+          value={formState.role}
+          onChange={handleInputChange}
+          required
         >
-          <FormInput
-            label="Full Name"
-            name="name"
-            value={formState.name}
-            onChange={handleInputChange}
-            required
-          />
-          <FormInput
-            label="Email Address"
-            name="email"
-            type="email"
-            value={formState.email}
-            onChange={handleInputChange}
-            required
-          />
-          <div className="row">
-            <div className="col-md-6">
-              <FormSelect
-                label="Role"
-                name="role"
-                value={formState.role}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="Trainer">Trainer</option>
-                <option value="Counsellor">Counsellor</option>
-                <option value="Front Desk">Front Desk</option>
-                <option value="Sales">Sales</option>
-                <option value="Other">Other</option>
-              </FormSelect>
-            </div>
-            <div className="col-md-6">
-              <FormInput
-                label="Phone Number"
-                name="phone"
-                type="tel"
-                value={formState.phone}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
+          <option value="Trainer">Trainer</option>
+          <option value="Counsellor">Counsellor</option>
+          <option value="Front Desk">Front Desk</option>
+          <option value="Sales">Sales</option>
+          <option value="Other">Other</option>
+        </FormSelect>
+      </div>
+
+      <div className="col-md-4">
+        <FormSelect
+          label="Gender"
+          name="gender"
+          value={formState.gender}
+          onChange={handleInputChange}
+          required
+        >
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </FormSelect>
+      </div>
+
+      <div className="col-md-4">
+        <FormSelect
+          label="Status"
+          name="status"
+          value={formState.status}
+          onChange={handleInputChange}
+          required
+        >
+          <option value="Active">Active</option>
+          <option value="Discontinued">Discontinued</option>
+        </FormSelect>
+      </div>
+
+      <div className="col-md-4">
+        <FormInput
+          label="Joining Date"
+          name="joiningDate"
+          type="date"
+          value={formState.joiningDate}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+
+      <div className="col-md-4">
+        <FormSelect
+          label="Employment Type"
+          name="employmentType"
+          value={formState.employmentType}
+          onChange={handleInputChange}
+          required
+        >
+          <option value="Full-time">Full-time</option>
+          <option value="Part-time">Part-time</option>
+          <option value="Contract">Contract</option>
+        </FormSelect>
+      </div>
+
+      <div className="col-md-4">
+        <FormInput
+          label={`Salary (${
+            formState.salaryType === "Hourly" ? "₹ / hour" : "₹ / month"
+          })`}
+          name="salary"
+          type="number"
+          value={formState.salary > 0 ? formState.salary : ""}
+          onChange={handleInputChange}
+          required
+        />
+      </div>
+
+      {formState.employmentType === "Part-time" && (
+        <div className="col-md-4">
           <FormSelect
-            label="Gender"
-            name="gender"
-            value={formState.gender}
+            label="Salary Type"
+            name="salaryType"
+            value={formState.salaryType}
             onChange={handleInputChange}
-            required
           >
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
+            <option value="Monthly">Monthly</option>
+            <option value="Hourly">Hourly</option>
           </FormSelect>
-          <FormTextArea
-            label="Address"
-            name="address"
-            value={formState.address ?? ""}
-            onChange={handleInputChange}
-          />
-          <FormTextArea
-            label="About"
-            name="about"
-            value={formState.about ?? ""}
-            onChange={handleInputChange}
-          />
-          <div className="row">
-            <div className="col-md-6">
-              <FormInput
-                label="Joining Date"
-                name="joiningDate"
-                type="date"
-                value={formState.joiningDate}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="col-md-6">
-              <FormSelect
-                label="Employment Type"
-                name="employmentType"
-                value={formState.employmentType}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="Full-time">Full-time</option>
-                <option value="Part-time">Part-time</option>
-                <option value="Contract">Contract</option>
-              </FormSelect>
-            </div>
-          </div>
-          <div className="row">
-            <div
-              className={
-                formState.employmentType === "Part-time" ? "col-md-6" : "col-12"
-              }
-            >
-              <FormInput
-                label={`Salary (${
-                  formState.salaryType === "Hourly" ? "₹ / hour" : "₹ / month"
-                })`}
-                name="salary"
-                type="number"
-                value={formState.salary > 0 ? formState.salary : ""}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            {formState.employmentType === "Part-time" && (
-              <div className="col-md-6">
-                <FormSelect
-                  label="Salary Type"
-                  name="salaryType"
-                  value={formState.salaryType}
-                  onChange={handleInputChange}
-                >
-                  <option value="Monthly">Monthly</option>
-                  <option value="Hourly">Hourly</option>
-                </FormSelect>
-              </div>
-            )}
-          </div>
-          <div className="row">
-            <div className="col-md-6">
-              <FormInput
-                label="Profile Picture"
-                name="imageUrl"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-              />
-            </div>
-            <div className="col-md-6">
-              <FormSelect
-                label="Status"
-                name="status"
-                value={formState.status}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="Active">Active</option>
-                <option value="Discontinued">Discontinued</option>
-              </FormSelect>
-            </div>
-          </div>
-          {formState.role === "Trainer" && (
-            <div className="mb-3">
-              <label className="form-label">Expertise</label>
-              <div
-                className="border rounded p-2"
-                style={{ maxHeight: "150px", overflowY: "auto" }}
-              >
-                <div className="row">
-                  {courses.map((course) => (
-                    <div key={course.id} className="col-12 col-md-6">
-                      <div className="form-check">
-                        <input
-                          type="checkbox"
-                          id={`expertise-${course.id}`}
-                          className="form-check-input"
-                          checked={
-                            formState.expertise?.includes(course.id) || false
-                          }
-                          onChange={() => handleExpertiseChange(course.id)}
-                        />
-                        <label
-                          className="form-check-label"
-                          htmlFor={`expertise-${course.id}`}
-                        >
-                          {course.name}
-                        </label>
-                      </div>
-                    </div>
-                  ))}
+        </div>
+      )}
+
+      <div className="col-md-4">
+        <FormInput
+          label="Profile Picture"
+          name="imageUrl"
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+        />
+      </div>
+
+      <div className="col-md-8">
+        <FormTextArea
+          label="Address"
+          name="address"
+          value={formState.address ?? ""}
+          onChange={handleInputChange}
+        />
+      </div>
+
+      <div className="col-12">
+        <FormTextArea
+          label="About"
+          name="about"
+          value={formState.about ?? ""}
+          onChange={handleInputChange}
+        />
+      </div>
+
+      {formState.role === "Trainer" && (
+        <div className="col-12">
+          <label className="form-label">Expertise</label>
+          <div
+            className="border rounded p-2"
+            style={{ maxHeight: "150px", overflowY: "auto" }}
+          >
+            <div className="row">
+              {courses.map((course) => (
+                <div key={course.id} className="col-md-6">
+                  <div className="form-check">
+                    <input
+                      type="checkbox"
+                      id={`expertise-${course.id}`}
+                      className="form-check-input"
+                      checked={formState.expertise?.includes(course.id) || false}
+                      onChange={() => handleExpertiseChange(course.id)}
+                    />
+                    <label
+                      className="form-check-label"
+                      htmlFor={`expertise-${course.id}`}
+                    >
+                      {course.name}
+                    </label>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          )}
-          <div className="d-flex justify-content-end pt-3 mt-3 border-top">
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="btn btn-secondary me-2"
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary">
-              {editingStaff ? "Save Changes" : "Add Staff"}
-            </button>
           </div>
-        </form>
-      </Modal>
+        </div>
+      )}
+    </div>
+
+    <div className="d-flex justify-content-end pt-3 mt-3 border-top bg-white sticky-bottom">
+      <button
+        type="button"
+        onClick={handleCloseModal}
+        className="btn btn-secondary me-2"
+      >
+        Cancel
+      </button>
+      <button type="submit" className="btn btn-primary">
+        {editingStaff ? "Save Changes" : "Add Staff"}
+      </button>
+    </div>
+  </form>
+</Modal>
     </div>
   );
 };

@@ -328,17 +328,21 @@ const FeesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
         />
       )}
 
-      <Modal
-        show={isModalOpen}
-        title={editingPayment ? "Edit Payment" : "Add New Payment"}
-        onClose={handleCloseModal}
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSubmit();
-          }}
-        >
+<Modal
+  show={isModalOpen}
+  title={editingPayment ? "Edit Payment" : "Add New Payment"}
+  onClose={handleCloseModal}
+>
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
+      handleSubmit();
+    }}
+  >
+    <div className="container-fluid">
+      <div className="row g-3">
+        {/* 3 inputs per row */}
+        <div className="col-md-4">
           <FormSelect
             label="Student"
             name="studentId"
@@ -353,6 +357,9 @@ const FeesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
               </option>
             ))}
           </FormSelect>
+        </div>
+
+        <div className="col-md-4">
           <FormInput
             label="Amount (₹)"
             name="amount"
@@ -361,6 +368,9 @@ const FeesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
             onChange={handleInputChange}
             required
           />
+        </div>
+
+        <div className="col-md-4">
           <FormInput
             label="Date"
             name="date"
@@ -369,56 +379,63 @@ const FeesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
             onChange={handleInputChange}
             required
           />
-          <div className="row">
-            <div className="col-md-6">
-              <FormSelect
-                label="Payment Method"
-                name="paymentMethod"
-                value={formState.paymentMethod}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
-                <option value="Online">Online</option>
-                <option value="UPI">UPI</option>
-                <option value="Other">Other</option>
-              </FormSelect>
-            </div>
-            <div className="col-md-6">
-              <FormSelect
-                label="Status"
-                name="status"
-                value={formState.status}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="Paid">Paid</option>
-                <option value="Pending">Pending</option>
-              </FormSelect>
-            </div>
-          </div>
+        </div>
+
+        <div className="col-md-4">
+          <FormSelect
+            label="Payment Method"
+            name="paymentMethod"
+            value={formState.paymentMethod}
+            onChange={handleInputChange}
+            required
+          >
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="Online">Online</option>
+            <option value="UPI">UPI</option>
+            <option value="Other">Other</option>
+          </FormSelect>
+        </div>
+
+        <div className="col-md-4">
+          <FormSelect
+            label="Status"
+            name="status"
+            value={formState.status}
+            onChange={handleInputChange}
+            required
+          >
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+          </FormSelect>
+        </div>
+
+        <div className="col-md-4">
           <FormTextArea
             label="Comments"
             name="comments"
             value={formState.comments ?? ""}
             onChange={handleInputChange}
           />
+        </div>
+      </div>
+    </div>
 
-          <div className="d-flex justify-content-end pt-3 mt-3 border-top">
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              className="btn btn-secondary me-2"
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary">
-              {editingPayment ? "Save Changes" : "Add Payment"}
-            </button>
-          </div>
-        </form>
-      </Modal>
+    {/* Footer Buttons */}
+    <div className="d-flex justify-content-end pt-3 mt-3 border-top">
+      <button
+        type="button"
+        onClick={handleCloseModal}
+        className="btn btn-secondary me-2"
+      >
+        Cancel
+      </button>
+      <button type="submit" className="btn btn-primary">
+        {editingPayment ? "Save Changes" : "Add Payment"}
+      </button>
+    </div>
+  </form>
+</Modal>
     </div>
   );
 };
