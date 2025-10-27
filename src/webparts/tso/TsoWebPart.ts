@@ -20,11 +20,11 @@ export interface ITsoWebPartProps {
 
 export default class TsoWebPart extends BaseClientSideWebPart<ITsoWebPartProps> {
 
-   public render(): void {
-    const element: React.ReactElement = React.createElement(App);
- 
-    ReactDom.render(element, this.domElement);
-  }
+    public render(): void {
+      const element: React.ReactElement = React.createElement(App);
+  
+      ReactDom.render(element, this.domElement);
+    }
  
     protected onInit(): Promise<void> {
     return super.onInit().then(_ =>{
