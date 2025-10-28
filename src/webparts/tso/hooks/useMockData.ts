@@ -951,7 +951,13 @@ export const useMockData = () => {
       console.error("deleteCourse error ::", error);
     }
   };
-
+  function sortByDateDesc(arr:any, key:any) {
+    return [...arr].sort((a, b) => {
+      const dateA = new Date(a[key]).getTime();
+      const dateB = new Date(b[key]).getTime();
+      return dateB - dateA; // descending (newest first)
+    });
+  }
   const fetchLeads = async (): Promise<void> => {
     try {
       const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
@@ -992,7 +998,8 @@ export const useMockData = () => {
         };
         return lead;
       });
-      setLeads(mappedLeads);
+
+      setLeads(sortByDateDesc(mappedLeads, "enquiryDate"));
     } catch (error) {
       console.error("Error fetching leads:", error);
     }

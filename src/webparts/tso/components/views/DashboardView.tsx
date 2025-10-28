@@ -68,6 +68,15 @@ const DashboardView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ dat
         })
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+        const formatDate = (isoDateString?: string): string => {
+            if (!isoDateString) return 'N/A';
+            const datePart = isoDateString.split('T')[0];
+            const parts = datePart.split('-');
+            if (parts.length !== 3) return isoDateString;
+            const [year, month, day] = parts;
+            return `${day}/${month}/${year}`;
+          };
+          
     return (
         <div>
             <h1 className="h2 mb-4">Dashboard</h1>
@@ -136,7 +145,7 @@ const DashboardView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ dat
                                         <li key={payment.id} className="list-group-item d-flex justify-content-between align-items-center px-0">
                                             <div>
                                                 <div className="fw-semibold">{getStudentName(payment.studentId)}</div>
-                                                <small className="text-danger">Due: {payment.date}</small>
+                                                <small className="text-danger">Due: {formatDate(payment.date)}</small>
                                             </div>
                                             <span className="fw-bold text-danger">₹{payment.amount.toLocaleString()}</span>
                                         </li>
@@ -163,7 +172,7 @@ const DashboardView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ dat
                                         <li key={payment.id} className="list-group-item d-flex justify-content-between align-items-center px-0">
                                             <div>
                                                 <div className="fw-semibold">{getStudentName(payment.studentId)}</div>
-                                                <small className="text-body-secondary">Due: {payment.date}</small>
+                                                <small className="text-body-secondary">Due: {formatDate(payment.date)}</small>
                                             </div>
                                             <span className="fw-bold text-primary">₹{payment.amount.toLocaleString()}</span>
                                         </li>

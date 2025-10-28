@@ -469,6 +469,16 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
     XLSX.writeFile(workbook, "talent_shapers_leads_template.xlsx");
   };
 
+  const formatDate = (isoDateString?: string): string => {
+    if (!isoDateString) return 'N/A';
+    const datePart = isoDateString.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length !== 3) return isoDateString;
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
+  };
+  
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -510,6 +520,7 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
           "Name",
           "Interested Course",
           "Source",
+          "enquiryDate",
           "Follow-up Date",
           "Status",
           "Comments",
@@ -529,7 +540,8 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
                 "N/A"}
             </td>
             <td className="p-3">{lead.source}</td>
-            <td className="p-3">{lead.nextFollowUpDate || "N/A"}</td>
+            <td className="p-3">{formatDate(lead.nextFollowUpDate) || "N/A"}</td>
+            <td className="p-3">{formatDate(lead.enquiryDate) || "N/A"}</td>
             <td className="p-3">
               <span
                 className={`badge rounded-pill ${statusColors[lead.status]}`}
