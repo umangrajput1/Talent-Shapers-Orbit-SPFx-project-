@@ -540,8 +540,8 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({
                 "N/A"}
             </td>
             <td className="p-3">{lead.source}</td>
-            <td className="p-3">{formatDate(lead.nextFollowUpDate) || "N/A"}</td>
             <td className="p-3">{formatDate(lead.enquiryDate) || "N/A"}</td>
+            <td className="p-3">{formatDate(lead.nextFollowUpDate) || "N/A"}</td>
             <td className="p-3">
               <span
                 className={`badge rounded-pill ${statusColors[lead.status]}`}
