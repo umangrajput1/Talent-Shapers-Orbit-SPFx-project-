@@ -1,9 +1,11 @@
 
+
 import React, { useState } from 'react';
-import Table from '../common/Table';
+import Table, { type TableHeader } from '../common/Table';
 import Modal from '../common/Modal';
 import ConfirmationModal from '../common/ConfirmationModal';
 import { useMockData } from '../../hooks/useMockData';
+import { useTable } from '../../hooks/useTable';
 import type { Staff } from '../../types';
 
 // Icons for actions
@@ -57,6 +59,19 @@ const StaffView: React.FC<StaffViewProps> = ({ data, onViewProfile }) => {
     const initialFormState: Omit<Staff, 'id'> = { name: '', email: '', role: 'Trainer', expertise: [], phone: '', address: '', imageUrl: '', gender: 'Male', status: 'Active', about: '', joiningDate: new Date().toISOString().split('T')[0], employmentType: 'Full-time', salary: 0, salaryType: 'Monthly' };
     const [formState, setFormState] = useState(initialFormState);
 
+    const { sortedItems, requestSort, sortConfig, searchTerm, setSearchTerm } = useTable(
+        staff,
+        ['name', 'email', 'phone', 'role'],
+        'name'
+    );
+    
+    const headers: TableHeader[] = [
+        { key: 'name', label: 'Name', sortable: true },
+        { key: 'role', label: 'Role', sortable: true },
+        { key: 'contact', label: 'Contact', sortable: false },
+        { key: 'status', label: 'Status', sortable: true },
+        { key: 'actions', label: 'Actions', sortable: false },
+    ];
     const handleOpenModal = (staffMember: Staff | null = null) => {
         if (staffMember) {
             setEditingStaff(staffMember);
@@ -136,8 +151,18 @@ const StaffView: React.FC<StaffViewProps> = ({ data, onViewProfile }) => {
                     Add Staff Member
                 </button>
             </div>
-            <Table headers={['Name', 'Role', 'Contact', 'Status', 'Actions']}>
-                {staff.map(staffMember => (
+            <Table 
+                headers={headers}
+                itemCount={sortedItems.length}
+                totalItemCount={staff.length}
+                itemName="staff member"
+                itemNamePlural="staff"
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                sortConfig={sortConfig}
+                requestSort={requestSort}
+            >
+                {sortedItems.map(staffMember => (
                     <tr key={staffMember.id} className={`align-middle ${staffMember.status === 'Discontinued' ? 'opacity-50' : ''}`}>
                         <td className="p-3">
                             <div className="d-flex align-items-center">

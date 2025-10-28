@@ -3,17 +3,17 @@ import Sidebar from './components/Sidebar';
 import DashboardView from './components/views/DashboardView';
 import StudentsView from './components/views/StudentsView';
 import StudentProfileView from './components/views/StudentProfileView';
-import StaffView from './components/views/TrainersView';
-import StaffProfileView from './components/views/TrainerProfileView';
+import TrainersView from './components/views/TrainersView';
+import TrainerProfileView from './components/views/TrainerProfileView';
 import CoursesView from './components/views/CoursesView';
 import FeesView from './components/views/FeesView';
 import ExpensesView from './components/views/ExpensesView';
 import AssignmentsView from './components/views/AssignmentsView';
 import LeadsView from './components/views/LeadsView';
 import BatchesView from './components/views/BatchesView';
+import AttendanceView from './components/views/AttendanceView';
 import { useMockData } from './hooks/useMockData';
 
-// All possible sidebar views
 export type ViewType =
   | 'dashboard'
   | 'students'
@@ -23,17 +23,17 @@ export type ViewType =
   | 'fees'
   | 'expenses'
   | 'assignments'
+  | 'attendance'
+  | 'trainerProfile'
+  | 'studentProfile'
   | 'leads';
 
 const App: React.FC = () => {
-  // --- State Management ---
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
-  });
-
+  const [theme, setTheme] = useState<'light' | 'dark'>(() =>
+    (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
+  );
+  const [profileId, setProfileId] = useState<string | null>(null);
   const mockData = useMockData();
 
   // --- Theme Persistence ---
@@ -42,61 +42,40 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // --- Handlers ---
   const toggleTheme = () => {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const handleViewStudentProfile = (studentId: string) => {
-    setSelectedStudentId(studentId);
-    setSelectedStaffId(null);
-  };
-
-  const handleViewStaffProfile = (staffId: string) => {
-    setSelectedStaffId(staffId);
-    setSelectedStudentId(null);
-  };
-
-  const handleBackToList = () => {
-    setSelectedStudentId(null);
-    setSelectedStaffId(null);
-  };
-
+  // --- Navigation Handlers ---
   const handleSidebarNavigation = (view: ViewType) => {
     setActiveView(view);
-    setSelectedStudentId(null);
-    setSelectedStaffId(null);
+    setProfileId(null);
+  };
+
+  const handleViewStudentProfile = (studentId: string) => {
+    setProfileId(studentId);
+    setActiveView('studentProfile');
+  };
+
+  const handleViewTrainerProfile = (trainerId: string) => {
+    setProfileId(trainerId);
+    setActiveView('trainerProfile');
+  };
+
+  const handleNavigate = (view: ViewType) => {
+    setActiveView(view);
+    setProfileId(null);
   };
 
   // --- Conditional View Rendering ---
   const renderView = () => {
-    if (selectedStudentId) {
-      return (
-        <StudentProfileView
-          studentId={selectedStudentId}
-          data={mockData}
-          onBack={handleBackToList}
-        />
-      );
-    }
-
-    if (selectedStaffId) {
-      return (
-        <StaffProfileView
-          staffId={selectedStaffId}
-          data={mockData}
-          onBack={handleBackToList}
-        />
-      );
-    }
-
     switch (activeView) {
       case 'dashboard':
         return <DashboardView data={mockData} />;
       case 'students':
         return <StudentsView data={mockData} onViewProfile={handleViewStudentProfile} />;
       case 'staff':
-        return <StaffView data={mockData} onViewProfile={handleViewStaffProfile} />;
+        return <TrainersView data={mockData} onViewProfile={handleViewTrainerProfile} />;
       case 'courses':
         return <CoursesView data={mockData} />;
       case 'batches':
@@ -107,14 +86,27 @@ const App: React.FC = () => {
         return <ExpensesView data={mockData} />;
       case 'assignments':
         return <AssignmentsView data={mockData} />;
+      case 'attendance':
+        return <AttendanceView data={mockData} />;
       case 'leads':
         return <LeadsView data={mockData} />;
+      case 'studentProfile':
+        return profileId ? (
+          <StudentProfileView studentId={profileId} data={mockData} onNavigate={handleNavigate} />
+        ) : (
+          <div>Student not found</div>
+        );
+      case 'trainerProfile':
+        return profileId ? (
+          <TrainerProfileView staffId={profileId} data={mockData} onNavigate={handleNavigate} />
+        ) : (
+          <div>Trainer not found</div>
+        );
       default:
         return <DashboardView data={mockData} />;
     }
   };
 
-  // --- Render ---
   return (
     <div className="d-flex vh-100 bg-body-tertiary">
       <Sidebar

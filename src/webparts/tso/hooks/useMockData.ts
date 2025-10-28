@@ -20,6 +20,9 @@ export const useMockData = () => {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [attendance, setAttendance] = useState<any[]>([]);
+
+    const createNewId = () => crypto.randomUUID();
 
   const generateUniqueId = (prefix: string, items: { id: string }[]) => {
     const fullPrefix = `TSO-${prefix}-`;
@@ -1123,6 +1126,37 @@ export const useMockData = () => {
     }
   };
 
+      // Attendance
+    const addOrUpdateAttendance = (date: string, personType: 'student' | 'staff', dailyRecords: Map<string, number>) => {
+        setAttendance(prev => {
+            // Filter out any existing records for the given date and person type, as they will be replaced.
+            const otherAttendance = prev.filter(a => !(a.date === date && a.personType === personType));
+
+            const newOrUpdatedRecordsForDay: any[] = [];
+            dailyRecords.forEach((hours, personId) => {
+                // We only store records where hours are greater than 0
+                if (hours > 0) {
+                    const existingRecord = prev.find(a => a.date === date && a.personType === personType && a.personId === personId);
+                    if (existingRecord) {
+                        // Update existing record
+                        newOrUpdatedRecordsForDay.push({ ...existingRecord, hoursPresent: hours });
+                    } else {
+                        // Create new record
+                        newOrUpdatedRecordsForDay.push({
+                            id: createNewId(),
+                            personId,
+                            personType,
+                            date,
+                            hoursPresent: hours,
+                        });
+                    }
+                }
+            });
+
+            return [...otherAttendance, ...newOrUpdatedRecordsForDay];
+        });
+    };
+
   return {
     expensesData,
     getAssignments,
@@ -1163,5 +1197,7 @@ export const useMockData = () => {
     addAssignment,
     updateAssignment,
     deleteAssignment,
+    attendance, 
+    addOrUpdateAttendance
   };
 };

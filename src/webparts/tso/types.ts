@@ -56,7 +56,7 @@ export interface Lead {
     enquiryDate: string;
     nextFollowUpDate?: string;
     assignedTo?: string; // staffId
-    comments?: string;
+    comments?: any[]; // Array of comment objects { id, authorId, text, date
 }
 
 export interface Staff {
@@ -84,6 +84,7 @@ export interface FeePayment {
   date: string;
   status: 'Paid' | 'Pending';
   paymentMethod: 'Cash' | 'Card' | 'Online' | 'Other';
+  comments?: string;
 }
 
 export interface Expense {
@@ -94,6 +95,7 @@ export interface Expense {
   date: string;
   billUrl?: string;
   comments?: string;
+  staffId?: string; 
 }
 
 export interface Assignment {
@@ -105,4 +107,5 @@ export interface Assignment {
   dueDate: string;
   status: 'Pending' | 'Submitted';
   assignmentFileUrl?: string;
+  staffId?: string;
 }

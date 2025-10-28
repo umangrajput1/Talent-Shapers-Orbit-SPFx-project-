@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import Table from '../common/Table';
+import Table, { type TableHeader } from '../common/Table';
 import Modal from '../common/Modal';
 import ConfirmationModal from '../common/ConfirmationModal';
 import { useMockData } from '../../hooks/useMockData';
+import { useTable } from '../../hooks/useTable';
 import type { Batch } from '../../types';
 
 // Icons
@@ -40,6 +41,28 @@ const BatchesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data 
 
     const initialFormState: Omit<Batch, 'id'> = { name: '', courseId: '', staffId: '', weekdays: [], time: '', startDate: new Date().toISOString().split('T')[0], status: 'Upcoming' };
     const [formState, setFormState] = useState(initialFormState);
+
+    const augmentedBatches = useMemo(() => batches.map(b => ({
+        ...b,
+        courseName: courses.find(c => c.id === b.courseId)?.name || 'N/A',
+        trainerName: staff.find(t => t.id === b.staffId)?.name || 'N/A',
+        studentCount: students.filter(s => s.batchIds?.includes(b.id)).length
+    })), [batches, courses, staff, students]);
+
+    const { sortedItems, requestSort, sortConfig, searchTerm, setSearchTerm } = useTable(
+        augmentedBatches,
+        ['name', 'courseName', 'trainerName'],
+        'name'
+    );
+    
+    const headers: TableHeader[] = [
+        { key: 'name', label: 'Batch Name', sortable: true },
+        { key: 'schedule', label: 'Schedule', sortable: false },
+        { key: 'trainerName', label: 'Trainer', sortable: true },
+        { key: 'studentCount', label: 'Students', sortable: true },
+        { key: 'status', label: 'Status', sortable: true },
+        { key: 'actions', label: 'Actions', sortable: false },
+    ];
 
     const handleOpenModal = (batch: Batch | null = null) => {
         if (batch) {
@@ -86,10 +109,6 @@ const BatchesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data 
         }
     };
 
-    const getStudentCountForBatch = (batchId: string) => {
-        return students.filter(s => s.batchIds?.includes(batchId)).length;
-    };
-
     const trainersForCourse = useMemo(() => staff.filter(t => t.role === 'Trainer' && t.expertise?.includes(formState.courseId)), [staff, formState.courseId]);
 
     return (
@@ -100,19 +119,29 @@ const BatchesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data 
                     Add New Batch
                 </button>
             </div>
-            <Table headers={['Batch Name', 'Schedule', 'Trainer', 'Students', 'Status', 'Actions']}>
-                {batches.map(batch => (
+            <Table
+                headers={headers}
+                itemCount={sortedItems.length}
+                totalItemCount={batches.length}
+                itemName="batch"
+                itemNamePlural="batches"
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                sortConfig={sortConfig}
+                requestSort={requestSort}
+            >
+                {sortedItems.map(batch => (
                     <tr key={batch.id}>
                         <td className="p-3">
                             <div className="fw-semibold">{batch.name}</div>
-                            <div className="small text-body-secondary">{courses.find(c => c.id === batch.courseId)?.name}</div>
+                            <div className="small text-body-secondary">{batch.courseName}</div>
                         </td>
                         <td className="p-3">
                             <div>{batch.weekdays.join(', ')}</div>
                             <div className="small text-body-secondary">{batch.time}</div>
                         </td>
-                        <td className="p-3">{staff.find(t => t.id === batch.staffId)?.name || 'N/A'}</td>
-                        <td className="p-3">{getStudentCountForBatch(batch.id)}</td>
+                        <td className="p-3">{batch.trainerName}</td>
+                        <td className="p-3">{batch.studentCount}</td>
                         <td className="p-3">
                              <span className={`badge rounded-pill ${
                                 batch.status === 'Ongoing' ? 'text-bg-success' : 
@@ -137,135 +166,49 @@ const BatchesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data 
                     onCancel={() => setBatchToDelete(null)}
                 />
             )}
-<Modal
-  show={isModalOpen}
-  title={editingBatch ? "Edit Batch" : "Add New Batch"}
-  onClose={handleCloseModal}
->
-  <form
-    onSubmit={(e) => {
-      e.preventDefault();
-      handleSubmit();
-    }}
-  >
-    {/* 🧩 First Row - 3 inputs in one line */}
-    <div className="row g-3">
-      <div className="col-md-4">
-        <FormInput
-          label="Batch Name"
-          name="name"
-          value={formState.name}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div className="col-md-4">
-        <FormSelect
-          label="Course"
-          name="courseId"
-          value={formState.courseId}
-          onChange={handleInputChange}
-          required
-        >
-          <option value="">Select a course</option>
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </FormSelect>
-      </div>
-      <div className="col-md-4">
-        <FormSelect
-          label="Trainer"
-          name="staffId"
-          value={formState.staffId}
-          onChange={handleInputChange}
-          required
-          disabled={!formState.courseId}
-        >
-          <option value="">Select a trainer</option>
-          {trainersForCourse.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </FormSelect>
-      </div>
-    </div>
 
-    {/* 🧩 Second Row - Weekdays full width */}
-    <div className="mb-3 mt-3">
-      <label className="form-label">Weekdays</label>
-      <div className="d-flex flex-wrap gap-2">
-        {allWeekdays.map((day) => (
-          <div key={day} className="form-check form-check-inline">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id={`weekday-${day}`}
-              value={day}
-              checked={formState.weekdays.includes(day)}
-              onChange={() => handleWeekdayChange(day)}
-            />
-            <label className="form-check-label" htmlFor={`weekday-${day}`}>
-              {day}
-            </label>
-          </div>
-        ))}
-      </div>
-    </div>
+            <Modal show={isModalOpen} title={editingBatch ? 'Edit Batch' : 'Add New Batch'} onClose={handleCloseModal}>
+                <form onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
+                    <FormInput label="Batch Name" name="name" value={formState.name} onChange={handleInputChange} required />
+                    <div className="row">
+                        <div className="col-md-6">
+                            <FormSelect label="Course" name="courseId" value={formState.courseId} onChange={handleInputChange} required>
+                                <option value="">Select a course</option>
+                                {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </FormSelect>
+                        </div>
+                        <div className="col-md-6">
+                             <FormSelect label="Trainer" name="staffId" value={formState.staffId} onChange={handleInputChange} required disabled={!formState.courseId}>
+                                <option value="">Select a trainer</option>
+                                {trainersForCourse.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </FormSelect>
+                        </div>
+                    </div>
+                    <div className="mb-3">
+                        <label className="form-label">Weekdays</label>
+                        <div className="d-flex flex-wrap gap-2">
+                            {allWeekdays.map(day => (
+                                <div key={day} className="form-check form-check-inline">
+                                    <input className="form-check-input" type="checkbox" id={`weekday-${day}`} value={day} checked={formState.weekdays.includes(day)} onChange={() => handleWeekdayChange(day)} />
+                                    <label className="form-check-label" htmlFor={`weekday-${day}`}>{day}</label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                     <div className="row">
+                        <div className="col-md-6"><FormInput label="Time (e.g., 08:00 - 10:00)" name="time" value={formState.time} onChange={handleInputChange} required /></div>
+                        <div className="col-md-6"><FormInput label="Start Date" name="startDate" type="date" value={formState.startDate} onChange={handleInputChange} required /></div>
+                    </div>
+                    <FormSelect label="Status" name="status" value={formState.status} onChange={handleInputChange}>
+                        <option>Upcoming</option><option>Ongoing</option><option>Completed</option>
+                    </FormSelect>
 
-    {/* 🧩 Third Row - 3 inputs again */}
-    <div className="row g-3">
-      <div className="col-md-4">
-        <FormInput
-          label="Time (e.g., 08:00 - 10:00)"
-          name="time"
-          value={formState.time}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div className="col-md-4">
-        <FormInput
-          label="Start Date"
-          name="startDate"
-          type="date"
-          value={formState.startDate}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div className="col-md-4">
-        <FormSelect
-          label="Status"
-          name="status"
-          value={formState.status}
-          onChange={handleInputChange}
-        >
-          <option>Upcoming</option>
-          <option>Ongoing</option>
-          <option>Completed</option>
-        </FormSelect>
-      </div>
-    </div>
-
-    {/* Buttons */}
-    <div className="d-flex justify-content-end pt-3 mt-4 border-top">
-      <button
-        type="button"
-        onClick={handleCloseModal}
-        className="btn btn-secondary me-2"
-      >
-        Cancel
-      </button>
-      <button type="submit" className="btn btn-primary">
-        {editingBatch ? "Save Changes" : "Add Batch"}
-      </button>
-    </div>
-  </form>
-</Modal>
+                    <div className="d-flex justify-content-end pt-3 mt-3 border-top">
+                        <button type="button" onClick={handleCloseModal} className="btn btn-secondary me-2">Cancel</button>
+                        <button type="submit" className="btn btn-primary">{editingBatch ? 'Save Changes' : 'Add Batch'}</button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };
