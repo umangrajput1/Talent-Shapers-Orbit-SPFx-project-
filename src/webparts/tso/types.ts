@@ -112,3 +112,10 @@ export interface Assignment {
   staffId?: string;
   assignmentFile: null,
 }
+export interface AttendanceRecord {
+    id: string;
+    personId: string; // studentId or staffId
+    personType: 'student' | 'staff';
+    date: string; // YYYY-MM-DD
+    hoursPresent: number;
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Student, Course, Staff, Batch, Lead } from "../types";
+import type { Student, Course, Staff, Batch, Lead, AttendanceRecord } from "../types";
 import { web } from "../PnpUrl";
 import { Web } from "sp-pnp-js";
 
@@ -20,7 +20,7 @@ export const useMockData = () => {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [attendance, setAttendance] = useState<any[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
     const createNewId = () => crypto.randomUUID();
 
@@ -1118,21 +1118,39 @@ export const useMockData = () => {
     }
   };
 
-      // Attendance
+  // attendance
     const addOrUpdateAttendance = (date: string, personType: 'student' | 'staff', dailyRecords: Map<string, number>) => {
         setAttendance(prev => {
             // Filter out any existing records for the given date and person type, as they will be replaced.
             const otherAttendance = prev.filter(a => !(a.date === date && a.personType === personType));
 
-            const newOrUpdatedRecordsForDay: any[] = [];
+            const newOrUpdatedRecordsForDay: AttendanceRecord[] = [];
             dailyRecords.forEach((hours, personId) => {
                 // We only store records where hours are greater than 0
                 if (hours > 0) {
                     const existingRecord = prev.find(a => a.date === date && a.personType === personType && a.personId === personId);
                     if (existingRecord) {
                         // Update existing record
+                        ;(
+                          async () =>{
+                          await web.lists.getById("beeb8dc5-4b55-461b-9bf5-e2b8e172f7d1")
+                          .items.getById(parseInt(existingRecord.personId))
+                          .update
+                        })()
                         newOrUpdatedRecordsForDay.push({ ...existingRecord, hoursPresent: hours });
                     } else {
+                      ;(
+                          async () =>{
+                          await web.lists.getById("beeb8dc5-4b55-461b-9bf5-e2b8e172f7d1")
+                          .items.add({
+                            Title: "Attendance",
+                            personId: personId,
+                            personType: personType,
+                            date: new Date(date).toISOString().split("T")[0],
+                            hoursPresent: Number(hours),
+                          });
+                        }
+                      )()
                         // Create new record
                         newOrUpdatedRecordsForDay.push({
                             id: createNewId(),
@@ -1149,6 +1167,28 @@ export const useMockData = () => {
         });
     };
 
+    const prevAttendance = async () => {
+        const res = await web.lists
+          .getById("beeb8dc5-4b55-461b-9bf5-e2b8e172f7d1") 
+          .items.getAll();
+        const mappedAttendance: AttendanceRecord[] = res.map((item: any) => ({
+          id: String(item.Id),
+          personId: String(item.personId),
+          personType: item.personType,
+          date: item.date.substring(0,10),
+          hoursPresent: Number(item.hoursPresent),
+        }));
+        return mappedAttendance;  
+      }
+
+      useEffect(() => {
+        const fetchData = async () => {
+          const data = await prevAttendance();
+          console.log("attendance data:", data)
+          setAttendance(data);
+        };
+        fetchData();
+      }, []);
   return {
     getAssignments,
     expenses,
@@ -1169,16 +1209,12 @@ export const useMockData = () => {
     updateExpense,
     deleteExpense,
     courses,
-    // trainers,
     students,
     feePayments,
     assignments,
     addStudent,
     updateStudent,
     deleteStudent,
-    // addTrainer,
-    // updateTrainer,
-    // deleteTrainer,
     addCourse,
     updateCourse,
     deleteCourse,
