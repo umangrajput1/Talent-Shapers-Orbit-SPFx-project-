@@ -229,7 +229,6 @@ export const useMockData = () => {
 
       const file: File | undefined = (data as any).imageFile;
       if (file) {
-        console.log("Uploading staff image file:", file);
         await uploadAttachment(listId, file, res.data.Id);
       }
 
@@ -320,7 +319,6 @@ export const useMockData = () => {
             attachments,
           };
         })
-        console.log("Fetched expenses:", mappedExpenses);
       setExpenseData(mappedExpenses);
     } catch (error: any) {
       console.error("Error fetching expenses:", error);
@@ -381,7 +379,6 @@ export const useMockData = () => {
   };
 
   const deleteExpense = async (item: any) => {
-    console.log("Deleting expense with id:", item);
     try {
       await web.lists
         .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
@@ -417,7 +414,6 @@ export const useMockData = () => {
 
       // // 2️⃣ Upload file as attachment if present
       // if (assignment.assignmentFile) {
-      //   console.log("Uploading assignment file:", assignment.assignmentFile);
       //   await uploadAttachment(
       //     listId,
       //     assignment.assignmentFile,
@@ -926,7 +922,6 @@ export const useMockData = () => {
         .expand("assignedTo", "interestedCourse")
         .getAll();
 
-      // console.log("Raw items fetched from SharePoint:", res);
 
       const mappedLeads: Lead[] = res.map((item: any) => {
         const lead = {
@@ -1145,7 +1140,6 @@ export const useMockData = () => {
       useEffect(() => {
         const fetchData = async () => {
           const data = await prevAttendance();
-          console.log("attendance data:", data)
           setAttendance(data);
         };
         fetchData();
