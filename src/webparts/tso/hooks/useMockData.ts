@@ -630,24 +630,6 @@ export const useMockData = () => {
     return `${window.location.origin}${url}`;
   };
 
-  const dataUrlToBlob = (dataUrl: string): Blob => {
-    // data:[<mediatype>][;base64],<data>
-    const arr = dataUrl.split(",");
-    const mimeMatch = arr[0].match(/:(.*?);/);
-    const mime = mimeMatch ? mimeMatch[1] : "image/png";
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], { type: mime });
-  };
-
-  const blobToFile = (blob: Blob, fileName: string): File => {
-    return new File([blob], fileName, { type: blob.type });
-  };
-
   const fetchCourses = async (): Promise<void> => {
     try {
       const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
@@ -757,7 +739,7 @@ export const useMockData = () => {
 
   const addStudent = async (
     data: any & { imageFile?: File; imageUrl?: string }
-  ): Promise<{ success: boolean; data?: unknown; error?: unknown }> => {
+  ): Promise<any> => {
     try {
       const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
 
@@ -778,36 +760,15 @@ export const useMockData = () => {
         batchesId: {
           results: data.batchIds?.map((id: any) => Number(id)) || [],
         },
-        // attachments: handled separately
-        // do NOT set profilePicture field - we will use attachment
       };
 
-      // 1) Create item first
       const result = await web.lists
         .getById("25a7c502-9910-498e-898b-a0b37888a15e")
         .items.add(studentData);
 
-      const newItemId = result.data.Id;
-
-      // 2) If caller provided a File object, upload as attachment to created item
-      if ((data as any).imageFile) {
-        const file: File = (data as any).imageFile as File;
-        await web.lists
-          .getById("25a7c502-9910-498e-898b-a0b37888a15e")
-          .items.getById(newItemId)
-          .attachmentFiles.add(file.name, file);
-      } else if (data.imageUrl && data.imageUrl.startsWith("data:")) {
-        // optional: handle base64 by converting to File then attach
-        const blob = dataUrlToBlob(data.imageUrl);
-        const fileName = `student_${Date.now()}.png`;
-        const file = blobToFile(blob, fileName);
-        await web.lists
-          .getById("25a7c502-9910-498e-898b-a0b37888a15e")
-          .items.getById(newItemId)
-          .attachmentFiles.add(file.name, file);
+      if (data.expenseFile && data.expenseFile instanceof File) {
+        await uploadAttachment("25a7c502-9910-498e-898b-a0b37888a15e", data.expenseFile, result.data.Id);
       }
-
-      // Refresh local data
       await fetchAPIStudent();
 
       return { success: true, data: result };
