@@ -110,10 +110,11 @@ const LeadsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data })
         courseName: courses.find(c => c.id === lead.interestedCourseId)?.name || 'N/A'
     })), [leads, courses]);
 
-    const { sortedItems, requestSort, sortConfig, searchTerm, setSearchTerm } = useTable(
+        const { sortedItems, requestSort, sortConfig, searchTerm, setSearchTerm } = useTable(
         augmentedLeads,
         ['name', 'email', 'phone', 'courseName', 'source', 'status', 'enquiryDate'],
-        'enquiryDate'
+        'enquiryDate',
+        'descending'
     );
     
     const headers: TableHeader[] = [

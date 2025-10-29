@@ -63,7 +63,7 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
     const [editingStudent, setEditingStudent] = useState<Student | null>(null);
     const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
 
-    const initialFormState: Omit<Student, 'id'> = { name: '', email: '', phone: '', courseIds: [], batchIds: [], admissionDate: new Date().toISOString().split('T')[0], address: '', imageUrl: '', gender: 'Male', status: 'Active' };
+    const initialFormState: Omit<Student, 'id'> = { name: '', email: '', phone: '', courseIds: [], batchIds: [], admissionDate: new Date().toISOString().split('T')[0], address: '', imageUrl: '', imageFile: null, gender: 'Male', status: 'Active' };
     const [formState, setFormState] = useState(initialFormState);
 
     const { sortedItems, requestSort, sortConfig, searchTerm, setSearchTerm } = useTable(
@@ -130,11 +130,12 @@ const StudentsView: React.FC<StudentsViewProps> = ({ data, onViewProfile }) => {
     };
     
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const base64 = await toBase64(e.target.files[0]);
-            setFormState({ ...formState, imageUrl: base64 });
-        }
-    };
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const base64 = await toBase64(file);
+      setFormState({ ...formState, imageUrl: base64, imageFile: file as any });
+    }
+  };
 
     const handleSubmit = () => {
         if (formState.name && formState.email && formState.courseIds.length > 0) {

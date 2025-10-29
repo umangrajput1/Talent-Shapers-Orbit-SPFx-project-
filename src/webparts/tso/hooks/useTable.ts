@@ -10,10 +10,11 @@ export interface SortConfig<T> {
 export const useTable = <T extends { [key: string]: any }>(
   items: T[],
   searchableKeys: (keyof T)[],
-  initialSortKey: keyof T
+  initialSortKey: keyof T,
+  initialSortDirection: SortDirection = 'ascending'
 ) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState<any>({ key: initialSortKey, direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState<any>({ key: initialSortKey, direction: initialSortDirection });
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) {

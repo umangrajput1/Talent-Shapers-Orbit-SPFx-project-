@@ -57,7 +57,7 @@ const AssignmentsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ d
     const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
     const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
     
-    const initialFormState: Omit<Assignment, 'id' | 'status'> = {trainerId:'', title: '', courseId: '', studentId: '', staffId: '', dueDate: new Date().toISOString().split('T')[0], assignmentFileUrl: '' };
+    const initialFormState: Omit<Assignment, 'id' | 'status'> = {title: '', courseId: '', studentId: '', staffId: '', dueDate: new Date().toISOString().split('T')[0], assignmentFileUrl: '', assignmentFile: null, };
     const [formState, setFormState] = useState(initialFormState);
 
     const augmentedAssignments = useMemo(() => assignments.map(a => ({
@@ -69,7 +69,7 @@ const AssignmentsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ d
     const { sortedItems, requestSort, sortConfig, searchTerm, setSearchTerm } = useTable(
         augmentedAssignments,
         ['title', 'studentName', 'courseName', 'status'],
-        'dueDate'
+        'dueDate',
     );
 
     const headers: TableHeader[] = [
@@ -105,11 +105,16 @@ const AssignmentsView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ d
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const base64 = await toBase64(e.target.files[0]);
-            setFormState({ ...formState, assignmentFileUrl: base64 });
-        }
-    };
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const base64 = await toBase64(file);
+      setFormState({
+        ...formState,
+        assignmentFileUrl: base64,
+        assignmentFile: file as any,
+      });
+    }
+  };
 
     const handleSubmit = () => {
         if (formState.title && formState.courseId && formState.studentId && formState.staffId) {

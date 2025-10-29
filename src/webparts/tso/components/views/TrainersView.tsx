@@ -56,7 +56,7 @@ const StaffView: React.FC<StaffViewProps> = ({ data, onViewProfile }) => {
     const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
     const [staffToDelete, setStaffToDelete] = useState<Staff | null>(null);
 
-    const initialFormState: Omit<Staff, 'id'> = { name: '', email: '', role: 'Trainer', expertise: [], phone: '', address: '', imageUrl: '', gender: 'Male', status: 'Active', about: '', joiningDate: new Date().toISOString().split('T')[0], employmentType: 'Full-time', salary: 0, salaryType: 'Monthly' };
+    const initialFormState: Omit<Staff, 'id'> = { name: '', email: '', role: 'Trainer', expertise: [], phone: '', address: '', imageUrl: '', gender: 'Male', status: 'Active', about: '', joiningDate: new Date().toISOString().split('T')[0], employmentType: 'Full-time', salary: 0, salaryType: 'Monthly', imageFile: null, };
     const [formState, setFormState] = useState(initialFormState);
 
     const { sortedItems, requestSort, sortConfig, searchTerm, setSearchTerm } = useTable(
@@ -116,10 +116,11 @@ const StaffView: React.FC<StaffViewProps> = ({ data, onViewProfile }) => {
     
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            const base64 = await toBase64(e.target.files[0]);
-            setFormState({ ...formState, imageUrl: base64 });
+          const file = e.target.files[0];
+          const base64 = await toBase64(file);
+          setFormState({ ...formState, imageUrl: base64, imageFile: file as any });
         }
-    };
+      };
 
     const handleSubmit = () => {
         if (formState.name && formState.email && formState.salary > 0) {

@@ -11,7 +11,8 @@ export interface Student {
   address?: string;
   gender: 'Male' | 'Female' | 'Other';
   status: 'Active' | 'Discontinued';
-  batchNames?: string[]; // नया - UI पर दिखाने के लिए
+  batchNames?: string[]; 
+  imageFile: null 
 }
 
 
@@ -75,6 +76,7 @@ export interface Staff {
   employmentType: 'Full-time' | 'Part-time' | 'Contract';
   salary: number;
   salaryType: 'Monthly' | 'Hourly';
+  imageFile: null;
 }
 
 export interface FeePayment {
@@ -96,6 +98,7 @@ export interface Expense {
   billUrl?: string;
   comments?: string;
   staffId?: string; 
+  expenseFile: null
 }
 
 export interface Assignment {
@@ -103,9 +106,9 @@ export interface Assignment {
   title: string;
   courseId: string;
   studentId: string;
-  trainerId: string;
   dueDate: string;
   status: 'Pending' | 'Submitted';
   assignmentFileUrl?: string;
   staffId?: string;
+  assignmentFile: null,
 }

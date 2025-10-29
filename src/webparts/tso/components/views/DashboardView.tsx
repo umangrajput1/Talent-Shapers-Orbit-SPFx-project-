@@ -13,7 +13,7 @@ const cardColors = {
 }
 
 const DashboardView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data }) => {
-    const { students, staff, courses, feePayments, expensesData, leads, batches } = data;
+    const { students, staff, courses, feePayments, expenses, leads, batches } = data;
 
     const totalRevenue = feePayments.filter(f => f.status === 'Paid').reduce((sum, f) => sum + f.amount, 0);
     const activeStudentsCount = students.filter(s => s.status === 'Active').length;
@@ -22,7 +22,7 @@ const DashboardView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ dat
     
     const processMonthlyData = () => {
         const monthlyData: { [key: string]: { Revenue: number, Expenses: number } } = {};
-        const processItems = (items: (typeof feePayments | typeof expensesData), type: 'Revenue' | 'Expenses') => {
+        const processItems = (items: (typeof feePayments | typeof expenses), type: 'Revenue' | 'Expenses') => {
             items.forEach(item => {
                 if (type === 'Revenue' && (item as any).status !== 'Paid') return;
     
@@ -35,7 +35,7 @@ const DashboardView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ dat
         };
     
         processItems(feePayments, 'Revenue');
-        processItems(expensesData, 'Expenses');
+        processItems(expenses, 'Expenses');
         
         const chartData = Object.keys(monthlyData).map(month => ({
             name: month,

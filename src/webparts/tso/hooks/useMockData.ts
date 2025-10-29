@@ -229,6 +229,7 @@ export const useMockData = () => {
 
       const file: File | undefined = (data as any).imageFile;
       if (file) {
+        console.log("Uploading staff image file:", file);
         await uploadAttachment(listId, file, res.data.Id);
       }
 
@@ -281,16 +282,6 @@ export const useMockData = () => {
     await fetchStaff();
   };
 
-  // expenses
-
-  const expensesData = expenses.map((item) => ({
-    id: item.Id.toString(),
-    description: item.Description,
-    category: item.Category,
-    amount: item.Amount,
-    date: item.Date.substring(0, 10),
-    comments: item.Comments,
-  }));
 
   const fetchExpenses = async () => {
     try {
@@ -302,35 +293,34 @@ export const useMockData = () => {
         .expand("AttachmentFiles") // ensures attachment files are fetched
         .get();
 
-      const mappedExpenses = await Promise.all(
-        res.map(async (item: any) => {
-          // Fetch attachments if any
-          const attachments = item.Attachments
-            ? await web.lists
-                .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
-                .items.getById(item.Id)
-                .attachmentFiles.get()
+      const mappedExpenses = res.map( (item: any) => {
+          const attachments =
+          item.AttachmentFiles && item.AttachmentFiles.length > 0
+            ? item.AttachmentFiles.map((att: any) => ({
+                fileName: att.FileName,
+                serverRelativeUrl: att.ServerRelativeUrl,
+                url: `${window.location.origin}${att.ServerRelativeUrl}`,
+              }))
             : [];
 
+        const billUrl =
+          attachments.length > 0
+            ? attachments[0].url
+            : `https://i.pravatar.cc/150?u=staff${item.Id}`;
+
           return {
-            Id: item.Id,
-            Title: item.Title,
-            Description: item.Description || item.Title,
-            Category: item.Category,
-            Amount: item.Amount,
-            Date: item.Date ? item.Date.substring(0, 10) : "",
-            Comments: item.Comments,
-            Attachments: attachments,
-            AttachmentUrls:
-              attachments.length > 0
-                ? attachments.map(
-                    (att: any) =>
-                      `${window.location.origin}${att.ServerRelativeUrl}`
-                  )
-                : [],
+            id: (item.Id).toString(),
+            title: item.Title,
+            description: item.Description || item.Title,
+            category: item.Category,
+            amount: item.Amount,
+            date: new Date(item.Date).toISOString().split("T")[0],
+            comments: item.Comments,
+            billUrl,
+            attachments,
           };
         })
-      );
+        console.log("Fetched expenses:", mappedExpenses);
       setExpenseData(mappedExpenses);
     } catch (error: any) {
       console.error("Error fetching expenses:", error);
@@ -345,7 +335,7 @@ export const useMockData = () => {
         Description: item.description,
         Category: item.category,
         Amount: Number(item.amount),
-        Date: item.date,
+        Date: new Date(item.date).toISOString().split("T")[0],
         Comments: item.comments,
       };
 
@@ -353,8 +343,8 @@ export const useMockData = () => {
         .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
         .items.add(newItem);
 
-      if (item.file && item.file instanceof File) {
-        await uploadAttachment(listId, item.file, res.data.Id); // Upload attachment
+      if (item.expenseFile && item.expenseFile instanceof File) {
+        await uploadAttachment(listId, item.expenseFile, res.data.Id);
       }
 
       await fetchExpenses();
@@ -371,17 +361,17 @@ export const useMockData = () => {
         Description: item.description,
         Category: item.category,
         Amount: Number(item.amount),
-        Date: item.date,
+        Date: new Date(item.date).toISOString().split("T")[0],
         Comments: item.comments,
       };
 
       await web.lists
         .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
-        .items.getById(item.Id)
+        .items.getById(item.id)
         .update(updateData);
 
-      if (item.file && item.file instanceof File) {
-        await uploadAttachment(listId, item.file, item.Id);
+      if (item.expenseFile && item.expenseFile instanceof File) {
+        await uploadAttachment(listId, item.expenseFile, item.id);
       }
 
       await fetchExpenses();
@@ -391,13 +381,14 @@ export const useMockData = () => {
   };
 
   const deleteExpense = async (item: any) => {
+    console.log("Deleting expense with id:", item);
     try {
       await web.lists
         .getById("7dc4e19a-3157-4093-9672-6e28e73434b2")
-        .items.getById(item.Id)
+        .items.getById(item)
         .delete();
 
-      setExpenseData((prev) => prev.filter((e) => e.Id !== item.Id));
+      setExpenseData((prev) => prev.filter((e) => e.id !== item));
     } catch (err: any) {
       console.error("Error deleting expense:", err);
     }
@@ -426,6 +417,7 @@ export const useMockData = () => {
 
       // // 2️⃣ Upload file as attachment if present
       // if (assignment.assignmentFile) {
+      //   console.log("Uploading assignment file:", assignment.assignmentFile);
       //   await uploadAttachment(
       //     listId,
       //     assignment.assignmentFile,
@@ -954,13 +946,13 @@ export const useMockData = () => {
       console.error("deleteCourse error ::", error);
     }
   };
-  function sortByDateDesc(arr:any, key:any) {
-    return [...arr].sort((a, b) => {
-      const dateA = new Date(a[key]).getTime();
-      const dateB = new Date(b[key]).getTime();
-      return dateB - dateA; // descending (newest first)
-    });
-  }
+  // function sortByDateDesc(arr:any, key:any) {
+  //   return [...arr].sort((a, b) => {
+  //     const dateA = new Date(a[key]).getTime();
+  //     const dateB = new Date(b[key]).getTime();
+  //     return dateB - dateA; // descending (newest first)
+  //   });
+  // }
   const fetchLeads = async (): Promise<void> => {
     try {
       const web = new Web("https://smalsusinfolabs.sharepoint.com/sites/TSO");
@@ -1002,7 +994,7 @@ export const useMockData = () => {
         return lead;
       });
 
-      setLeads(sortByDateDesc(mappedLeads, "enquiryDate"));
+      setLeads(mappedLeads);
     } catch (error) {
       console.error("Error fetching leads:", error);
     }
@@ -1158,7 +1150,6 @@ export const useMockData = () => {
     };
 
   return {
-    expensesData,
     getAssignments,
     expenses,
     staff,

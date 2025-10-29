@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import Table, { type TableHeader } from '../common/Table';
 import Modal from '../common/Modal';
@@ -7,6 +5,9 @@ import ConfirmationModal from '../common/ConfirmationModal';
 import { useMockData } from '../../hooks/useMockData';
 import { useTable } from '../../hooks/useTable';
 import type { FeePayment } from '../../types';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 // Icons for actions
 const EditIcon: React.FC<{className?: string}> = (props) => (
@@ -130,63 +131,77 @@ const FeesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data }) 
         }
     };
 
-    const generateBillPdf = (payment: FeePayment) => {
-        const student = students.find(s => s.id === payment.studentId);
-        if (!student) return;
+  const generateBillPdf = (payment: any, students: any[]) => {
+    const student = students.find((s) => s.id === payment.studentId);
+    if (!student) {
+      console.error("Student not found for payment:", payment);
+      return;
+    }
 
-        // @ts-ignore
-        const doc = new window.jspdf.jsPDF();
+    const doc = new jsPDF();
 
-        // Header
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Talent Shapers Orbit', 105, 20, { align: 'center' });
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Kirti Tower, Techzone-4 Greater Noida west', 105, 27, { align: 'center' });
-        doc.setFontSize(14);
-        doc.text('Payment Receipt', 105, 38, { align: 'center' });
-    
-        // Student & Payment Info
-        doc.setFontSize(10);
-        doc.text(`Bill To: ${student.name}`, 20, 55);
-        doc.text(`Email: ${student.email}`, 20, 60);
-        
-        doc.text(`Transaction ID: ${payment.id}`, 190, 55, { align: 'right' });
-        doc.text(`Date: ${formatDate(payment.date)}`, 190, 60, { align: 'right' });
-        doc.text(`Payment Method: ${payment.paymentMethod}`, 190, 65, { align: 'right' });
-    
-        // Table using autoTable plugin
-        doc.autoTable({
-            startY: 75,
-            head: [['Description', 'Amount']],
-            body: [
-                ['Course Fee Payment', `₹${payment.amount.toLocaleString()}`]
-            ],
-            foot: [
-                [{ content: 'Total Paid', colSpan: 1, styles: { halign: 'right', fontStyle: 'bold' } }, { content: `₹${payment.amount.toLocaleString()}`, styles: { fontStyle: 'bold' } }]
-            ],
-            theme: 'striped',
-            headStyles: { fillColor: [78, 89, 104] }
-        });
-    
-        // Footer
-        let finalY = (doc as any).lastAutoTable.finalY;
+    // Header
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Talent Shapers Orbit", 105, 20, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Kirti Tower, Techzone-4 Greater Noida West", 105, 27, {
+      align: "center",
+    });
+    doc.setFontSize(14);
+    doc.text("Payment Receipt", 105, 38, { align: "center" });
 
-        if (payment.comments) {
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'italic');
-            doc.text(`Comments: ${payment.comments}`, 20, finalY + 10);
-            finalY += 10;
-        }
+    // Student info
+    doc.setFontSize(10);
+    doc.text(`Bill To: ${student.name}`, 20, 55);
+    doc.text(`Email: ${student.email}`, 20, 60);
 
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Thank you for your payment!', 105, finalY + 15, { align: 'center' });
-    
-        // Save PDF
-        doc.save(`Receipt-${student.name.replace(' ', '_')}-${payment.date}.pdf`);
-    };
+    doc.text(`Transaction ID: ${payment.id}`, 190, 55, { align: "right" });
+    doc.text(`Date: ${payment.date}`, 190, 60, { align: "right" });
+    doc.text(`Payment Method: ${payment.paymentMethod}`, 190, 65, {
+      align: "right",
+    });
+
+    // ✅ Correct usage of autoTable
+    autoTable(doc, {
+      startY: 75,
+      head: [["Description", "Amount"]],
+      body: [
+        ["Course Fee Payment", `Rs. ${payment.amount.toLocaleString("en-IN")}`],
+      ],
+      foot: [
+        [
+          {
+            content: "Total Paid",
+            styles: { halign: "right", fontStyle: "bold" },
+          },
+          {
+            content: `Rs. ${payment.amount.toLocaleString("en-IN")}`,
+            styles: { fontStyle: "bold" },
+          },
+        ],
+      ],
+      theme: "striped",
+      headStyles: { fillColor: [78, 89, 104] },
+    });
+
+    // Footer
+    const finalY = (doc as any).lastAutoTable?.finalY || 100;
+    if (payment.comments) {
+      doc.setFont("helvetica", "italic");
+      doc.text(`Comments: ${payment.comments}`, 20, finalY + 10);
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.text("Thank you for your payment!", 105, finalY + 20, {
+      align: "center",
+    });
+
+    // Save
+    const safeName = student.name.replace(/\s+/g, "_");
+    doc.save(`Receipt-${safeName}-${payment.date}.pdf`);
+  };
 
     return (
         <div>
@@ -231,7 +246,7 @@ const FeesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data }) 
                             <div className="d-flex gap-2">
                                 {payment.status === 'Paid' && (
                                     <button 
-                                        onClick={() => generateBillPdf(payment)} 
+                                        onClick={() => generateBillPdf(payment, students)} 
                                         className="btn btn-sm btn-outline-success"
                                         title="Download Bill"
                                     >

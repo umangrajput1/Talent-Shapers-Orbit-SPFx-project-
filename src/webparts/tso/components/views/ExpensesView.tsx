@@ -62,7 +62,7 @@ const ExpensesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
     const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
 
-    const initialFormState: Omit<Expense, 'id'> = { description: '', category: 'Other', amount: 0, date: new Date().toISOString().split('T')[0], billUrl: '', comments: '', staffId: '' };
+    const initialFormState: Omit<Expense, 'id'> = { description: '', category: 'Other', amount: 0, date: new Date().toISOString().split('T')[0], billUrl: '', comments: '', expenseFile: null };
     const [formState, setFormState] = useState(initialFormState);
     
     const augmentedExpenses = useMemo(() => expenses.map(e => ({
@@ -118,8 +118,9 @@ const ExpensesView: React.FC<{ data: ReturnType<typeof useMockData> }> = ({ data
 
      const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
             const base64 = await toBase64(e.target.files[0]);
-            setFormState({ ...formState, billUrl: base64 });
+            setFormState({ ...formState, billUrl: base64, expenseFile: file as any });
         }
     };
 
